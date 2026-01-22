@@ -1,1 +1,1 @@
-# FlowerApp2.0
+# Happy Plant 2.0
