@@ -1,6 +1,7 @@
 package se.myhappyplants.server.services;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 
 /**
  * Interface for defining methods needed in a DatabaseConnection class
@@ -11,4 +12,6 @@ public interface IDatabaseConnection {
     Connection getConnection();
 
     void closeConnection();
+
+    void createTables(String databaseName) throws SQLException;
 }

@@ -20,6 +20,7 @@ public class QueryExecutor implements IQueryExecutor {
     public void executeUpdate(String query) throws SQLException {
         boolean isSuccess = false;
         int retries = 0;
+        SQLException last = null;
         do {
             try {
                 this.connection.getConnection().createStatement().executeUpdate(query);
@@ -27,43 +28,57 @@ public class QueryExecutor implements IQueryExecutor {
                 return;
             }
             catch (SQLException sqlException) {
+                last = sqlException;
                 connection.closeConnection();
                 retries++;
             }
         } while (!isSuccess && retries < 3);
+        if (last != null) {
+            throw new SQLException("No connection to database", last);
+        }
         throw new SQLException("No connection to database");
     }
 
     @Override
     public ResultSet executeQuery(String query) throws SQLException {
         int retries = 0;
+        SQLException last = null;
         do {
             try {
                 ResultSet resultSet = this.connection.getConnection().createStatement().executeQuery(query);
                 return resultSet;
             }
             catch (SQLException sqlException) {
+                last = sqlException;
                 connection.closeConnection();
                 retries++;
             }
         } while (retries < 3);
+        if (last != null) {
+            throw new SQLException("No connection to database", last);
+        }
         throw new SQLException("No connection to database");
     }
 
     @Override
     public Statement beginTransaction() throws SQLException {
         int retries = 0;
+        SQLException last = null;
         do {
             try {
                 connection.getConnection().setAutoCommit(false);
                 return connection.getConnection().createStatement();
             }
             catch (SQLException sqlException) {
+                last = sqlException;
                 connection.closeConnection();
                 retries++;
             }
         }
         while (retries < 3);
+        if (last != null) {
+            throw new SQLException("No connection to database", last);
+        }
         throw new SQLException("No connection to database");
     }
 

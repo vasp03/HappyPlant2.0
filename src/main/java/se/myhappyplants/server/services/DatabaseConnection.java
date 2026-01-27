@@ -20,30 +20,73 @@ public class DatabaseConnection implements IDatabaseConnection {
     }
 
     private java.sql.Connection createConnection() throws SQLException, UnknownHostException {
-        String dbServerIp = PasswordsAndKeys.dbServerIp;
-        String dbServerPort = PasswordsAndKeys.dbServerPort;
-        String dbUser = PasswordsAndKeys.dbUsername;
-        String dbPassword = PasswordsAndKeys.dbPassword;
-        DriverManager.registerDriver(new com.microsoft.sqlserver.jdbc.SQLServerDriver());
-
-        if (InetAddress.getLocalHost().getHostName().equals(PasswordsAndKeys.dbHostName)) {
-            dbServerIp = "localhost";
+        try {
+            Class.forName("org.sqlite.JDBC");
+        } catch (ClassNotFoundException ignored) {
+            throw new SQLException("SQLite JDBC driver not found");
         }
-        String dbURL = String.format("jdbc:sqlserver://%s:%s;databaseName=" + databaseName + ";user=%s;password=%s", dbServerIp, dbServerPort, dbUser, dbPassword);
-        this.conn = DriverManager.getConnection(dbURL);
+
+        this.conn = DriverManager.getConnection("jdbc:sqlite:database.db");
         return conn;
+    }
+
+    public void createTables(String databaseName) throws SQLException {
+        java.sql.Connection c = getConnection();
+        if (databaseName.equals("MyHappyPlants")) {
+            String createUserTable = "CREATE TABLE IF NOT EXISTS [User] (" +
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                    "username TEXT NOT NULL, " +
+                    "email TEXT NOT NULL UNIQUE, " +
+                    "password TEXT NOT NULL, " +
+                    "notification_activated INTEGER NOT NULL DEFAULT 1, " +
+                    "fun_facts_activated INTEGER NOT NULL DEFAULT 1" +
+                    ");";
+
+            String createUserPlantTable = "CREATE TABLE IF NOT EXISTS [Plant] (" +
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                    "user_id INTEGER NOT NULL, " +
+                    "nickname TEXT, " +
+                    "last_watered TEXT NOT NULL, " +
+                    "plant_id TEXT NOT NULL, " +
+                    "image_url TEXT NOT NULL, " +
+                    "FOREIGN KEY(user_id) REFERENCES [User](id), " +
+                    "UNIQUE(user_id, nickname)" +
+                    ");";
+
+            try {
+                c.createStatement().executeUpdate(createUserTable);
+                c.createStatement().executeUpdate(createUserPlantTable);
+            } catch (SQLException sqlException) {
+                throw new SQLException("Could not create tables", sqlException);
+            }
+        } else if (databaseName.equals("Species")) {
+            String createSpeciesTable = "CREATE TABLE IF NOT EXISTS species (" +
+                    "id TEXT PRIMARY KEY, " +
+                    "common_name TEXT, " +
+                    "scientific_name TEXT, " +
+                    "family TEXT, " +
+                    "image_url TEXT, " +
+                    "genus TEXT, " +
+                    "light TEXT, " +
+                    "water_frequency TEXT" +
+                    ");";
+
+            try {
+                c.createStatement().executeUpdate(createSpeciesTable);
+            } catch (SQLException sqlException) {
+                throw new SQLException("Could not create tables", sqlException);
+            }
+        }
     }
 
     @Override
     public java.sql.Connection getConnection() {
-        if(conn==null) {
+        if (conn == null) {
             try {
                 conn = createConnection();
-            }
-            catch (UnknownHostException e) {
+            } catch (UnknownHostException e) {
                 e.printStackTrace();
-            }
-            catch (SQLException sqlException) {
+            } catch (SQLException sqlException) {
                 sqlException.printStackTrace();
             }
         }
@@ -52,11 +95,13 @@ public class DatabaseConnection implements IDatabaseConnection {
 
     @Override
     public void closeConnection() {
+        if (conn == null) {
+            return;
+        }
         try {
             conn.close();
-        }
-        catch (SQLException sqlException) {
-           //do nothing when this occurs, we don't care about this exception
+        } catch (SQLException sqlException) {
+            // ignore
         }
         conn = null;
     }
