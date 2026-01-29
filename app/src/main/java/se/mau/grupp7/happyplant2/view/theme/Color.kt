@@ -1,4 +1,4 @@
-package se.mau.grupp7.happyplant2.ui.theme
+package se.mau.grupp7.happyplant2.view.theme
 
 import androidx.compose.ui.graphics.Color
 

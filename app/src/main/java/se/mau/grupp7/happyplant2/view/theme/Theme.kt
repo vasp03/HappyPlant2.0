@@ -1,6 +1,5 @@
-package se.mau.grupp7.happyplant2.ui.theme
+package se.mau.grupp7.happyplant2.view.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
