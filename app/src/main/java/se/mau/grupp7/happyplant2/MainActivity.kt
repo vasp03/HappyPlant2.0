@@ -31,8 +31,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -130,9 +133,11 @@ fun BonsaiScreen() {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        val imageBitmap = ImageBitmap.imageResource(id = R.drawable.bonsai_100)
         Image(
-            painter = painterResource(id = R.drawable.bonsai_100),
-            contentDescription = "Bonsai Tree"
+            painter = BitmapPainter(imageBitmap, filterQuality = FilterQuality.None),
+            contentDescription = "Bonsai Tree",
+            modifier = Modifier.fillMaxSize(0.9f)
         )
     }
 }
