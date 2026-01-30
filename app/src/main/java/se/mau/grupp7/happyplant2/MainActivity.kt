@@ -27,10 +27,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -41,9 +41,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import se.mau.grupp7.happyplant2.controller.BackendConnector
+import se.mau.grupp7.happyplant2.controller.PlantTypeController
+import se.mau.grupp7.happyplant2.model.UserPlant
 import se.mau.grupp7.happyplant2.view.theme.HappyPlant2Theme
 
 private var backendConnector: BackendConnector? = null
+private var plantTypeController: PlantTypeController? = null
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,10 +65,11 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
-    val plantList = remember { mutableStateListOf<String>() }
+    val plantList = remember { backendConnector?.userPlantController?.GetUserPlants() ?: emptyList() }
 
     Scaffold(
-        bottomBar = { BottomNavigationBar(navController) }
+        bottomBar = { BottomNavigationBar(navController) },
+        containerColor = Color(0xFFF8DEAD)
     ) { innerPadding ->
         NavHost(
             navController = navController,
@@ -75,8 +79,8 @@ fun MainScreen() {
             composable("home") { BonsaiScreen() }
             composable("plantList") {
                 GridScreen(
-                    plantNames = plantList,
-                    onAddPlant = { plantList.add("New Plant ${plantList.size + 1}") },
+                    plantTypes = plantList,
+                    onAddPlant = { /* TODO */ },
                     gotoPlant = { navController.navigate("placeholder") }
                 )
             }
@@ -98,7 +102,7 @@ fun BottomNavigationBar(navController: NavHostController) {
         NavigationItem("plantList", Icons.AutoMirrored.Filled.List, "Grid"),
         NavigationItem("placeholder", Icons.Default.Settings, "Placeholder")
     )
-    NavigationBar {
+    NavigationBar(containerColor = Color(0xFFF8DEAD)) {
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = navBackStackEntry?.destination?.route
         items.forEach { item ->
@@ -127,22 +131,25 @@ fun BonsaiScreen() {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Image(
-            painter = painterResource(id = R.drawable.bonsai_tree),
+            painter = painterResource(id = R.drawable.bonsai_100),
             contentDescription = "Bonsai Tree"
         )
     }
 }
 
+/**
+ * Screen With The Users Plants
+ */
 @Composable
-fun GridScreen(plantNames: List<String>, onAddPlant: () -> Unit, gotoPlant: () -> Unit) {
+fun GridScreen(plantTypes: List<UserPlant>, onAddPlant: () -> Unit, gotoPlant: () -> Unit) {
     Column(Modifier.fillMaxSize()) {
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             contentPadding = PaddingValues(8.dp),
             modifier = Modifier.weight(1f) // Make the grid take up all available space
         ) {
-            items(plantNames) { plantName ->
-                PlantCard(plantName)
+            items(plantTypes) { plantType ->
+                PlantCard(plantType)
             }
         }
         Button(
@@ -151,7 +158,7 @@ fun GridScreen(plantNames: List<String>, onAddPlant: () -> Unit, gotoPlant: () -
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp) // Stick to the bottom
         ) {
-            Text(text = "Quick Add New Plant")
+            Text(text = "Water all Plants")
         }
         Button(
             onClick = gotoPlant,
@@ -159,13 +166,13 @@ fun GridScreen(plantNames: List<String>, onAddPlant: () -> Unit, gotoPlant: () -
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp) // Stick to the bottom
         ) {
-            Text(text = "Goto Add Plant")
+            Text(text = "Add Plant")
         }
     }
 }
 
 @Composable
-fun PlantCard(plantName: String) {
+fun PlantCard(userPlant: UserPlant) {
     Card(modifier = Modifier.padding(8.dp)) {
         Box(
             modifier = Modifier
@@ -173,7 +180,27 @@ fun PlantCard(plantName: String) {
                 .padding(16.dp),
             contentAlignment = Alignment.Center
         ) {
-            Text(text = plantName)
+            Text(text = userPlant.name)
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(text = userPlant.description)
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            contentAlignment = Alignment.BottomEnd
+        ){
+            Button(onClick = { backendConnector?.userPlantController?.WaterUserPlant(userPlant) }) {
+                Text(text = "Water")
+            }
         }
     }
 }
@@ -208,4 +235,5 @@ fun setup() {
     }
 
     backendConnector?.setup()
+    plantTypeController = PlantTypeController(backendConnector)
 }
