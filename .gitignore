@@ -218,6 +218,7 @@ resources/Testdata
 UsabilityTestProgram.java
 UsabilityTestProgram.class
 /resources/searchHistory.txt
-/.vscode
-database.sync-conflict-20260127-210906-QG6W76U.db
-database.db
+
+/.gradle
+/.idea
+local.properties
