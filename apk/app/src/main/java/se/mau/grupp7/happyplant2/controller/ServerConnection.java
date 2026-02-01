@@ -28,7 +28,7 @@ public class ServerConnection {
     public ArrayList<UserPlant> GetUserPlants() {
         ArrayList<UserPlant> plantTypes = new ArrayList<UserPlant>();
 
-        plantTypes.add(new UserPlant("User PlantFlower 1", "This is a flower", "https://example.com/flower1.jpg", 7, WaterAmount.RARELY, new Date()));
+        plantTypes.add(new UserPlant("User Flower 1", "This is a flower", "https://example.com/flower1.jpg", 7, WaterAmount.RARELY, new Date()));
         plantTypes.add(new UserPlant("User Flower 2", "This is another flower", "https://example.com/flower2.jpg", 7, WaterAmount.RARELY, new Date()));
         plantTypes.add(new UserPlant("User Flower 3", "This is a third flower", "https://example.com/flower3.jpg", 7, WaterAmount.RARELY, new Date()));
 
