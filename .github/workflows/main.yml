@@ -1,0 +1,51 @@
+# CI/CD Pipeline för Happy Plant 2.0 (Java/Gradle)
+name: Java CI/CD Pipeline
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  # DEL 1: CI - Körs vid Pull Request
+  Build_Test:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run Unit Tests
+        run: ./gradlew test
+
+      - name: CI Passed message
+        if: success()
+        run: echo "Testerna gick igenom i PR!"
+
+  # DEL 2: CD - Meddelande vid merge till Main
+  Deploy-message:
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Kod mergad till main. Redo för simulering av deployment."
+
+  # DEL 3: CD - Staging & Production (Simulering)
+  Deploy-Simulation:
+    needs: Deploy-message
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Deployar till staging..."
+      - run: echo "Staging klar. Deployar till production..."
+      - run: echo "Appen 'live' i produktion!"
