@@ -15,9 +15,9 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
@@ -81,29 +81,28 @@ fun MainScreen() {
         ) {
             composable("home") { BonsaiScreen() }
             composable("plantList") {
-                GridScreen(
-                    plantTypes = plantList,
-                    onAddPlant = { /* TODO */ },
-                    gotoPlant = { navController.navigate("placeholder") }
-                )
+                PlantsScreen(
+                    plantList,
+                    { /* TODO */ },
+                    { navController.navigate("placeHolder") })
             }
             composable("placeholder") { PlaceholderScreen() }
-            composable("addPlant") { AddPlantScreen() }
+            composable("addPlant") { AddNewPlantScreen() }
         }
     }
 }
 
 @Composable
-fun AddPlantScreen(){
+fun AddNewPlantScreen(){
     Text("Hello")
 }
 
 @Composable
 fun BottomNavigationBar(navController: NavHostController) {
     val items = listOf(
+        NavigationItem("placeholder", Icons.Default.Info, "Info"),
         NavigationItem("home", Icons.Default.Home, "Home"),
-        NavigationItem("plantList", Icons.AutoMirrored.Filled.List, "Grid"),
-        NavigationItem("placeholder", Icons.Default.Settings, "Placeholder")
+        NavigationItem("plantList", Icons.Default.Favorite, "Plants")
     )
     NavigationBar(containerColor = Color(0xFFF8DEAD)) {
         val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -137,7 +136,7 @@ fun BonsaiScreen() {
         Image(
             painter = BitmapPainter(imageBitmap, filterQuality = FilterQuality.None),
             contentDescription = "Bonsai Tree",
-            modifier = Modifier.fillMaxSize(0.9f)
+            modifier = Modifier.fillMaxSize(1f)
         )
     }
 }
@@ -146,7 +145,7 @@ fun BonsaiScreen() {
  * Screen With The Users Plants
  */
 @Composable
-fun GridScreen(plantTypes: List<UserPlant>, onAddPlant: () -> Unit, gotoPlant: () -> Unit) {
+fun PlantsScreen(plantTypes: List<UserPlant>, onAddPlant: () -> Unit, gotoPlant: () -> Unit) {
     Column(Modifier.fillMaxSize()) {
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
