@@ -3,6 +3,7 @@ package se.mau.grupp7.server.controller;
 import se.mau.grupp7.server.*;
 import se.mau.grupp7.happyplant2.shared.*;
 import se.mau.grupp7.server.model.*;
+import se.mau.grupp7.server.services.*;
 
 import java.io.IOException;
 

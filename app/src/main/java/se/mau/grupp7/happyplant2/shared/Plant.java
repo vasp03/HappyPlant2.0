@@ -1,6 +1,6 @@
 package se.mau.grupp7.happyplant2.shared;
 
-import se.myhappyplants.client.model.PictureRandomizer;
+//import se.mau.client.model.PictureRandomizer;
 
 import java.io.Serializable;
 import java.sql.Date;
@@ -122,9 +122,9 @@ public class Plant implements Serializable {
      * @return URL location of image
      */
     public String getImageURL() {
-        if(imageURL == null) {
-            imageURL = PictureRandomizer.getRandomPictureURL();
-        }
+//        if (imageURL == null) {
+//            imageURL = PictureRandomizer.getRandomPictureURL();
+//        }
         String httpImageURL = imageURL.replace("https", "http");
         return httpImageURL;
     }
@@ -134,7 +134,7 @@ public class Plant implements Serializable {
     }
 
     public void setLastWatered(LocalDate localDate) {
-        Date date = java.sql.Date.valueOf(localDate);
+        Date date = java.sql.Date.valueOf(String.valueOf(localDate));
         this.lastWatered = date;
     }
 
