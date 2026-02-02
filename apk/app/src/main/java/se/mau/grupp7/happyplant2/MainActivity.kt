@@ -19,7 +19,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -159,6 +161,13 @@ fun BonsaiScreen() {
                 contentDescription = "Bonsai Tree",
                 modifier = Modifier.fillMaxWidth().height(400.dp).align(Alignment.BottomCenter)
             )
+        // Settings Icon
+        IconButton(
+            onClick = { /* TODO: Navigate to settings */ },
+            modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)
+        ) {
+            Icon(Icons.Default.Settings, contentDescription = "Settings", tint = Color.White)
+        }
     }
 }
 
