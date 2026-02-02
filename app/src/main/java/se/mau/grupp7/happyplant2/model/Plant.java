@@ -1,4 +1,4 @@
-package se.mau.grupp7.happyplant2.shared;
+package se.mau.grupp7.happyplant2.model;
 
 //import se.mau.client.model.PictureRandomizer;
 

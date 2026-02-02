@@ -1,6 +1,5 @@
 package se.mau.grupp7.server;
 
-import se.mau.grupp7.server.controller.ResponseController;
 import se.mau.grupp7.server.services.*;
 
 import java.net.UnknownHostException;

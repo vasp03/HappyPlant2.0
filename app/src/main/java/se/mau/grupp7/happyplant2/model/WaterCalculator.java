@@ -1,4 +1,4 @@
-package se.mau.grupp7.happyplant2.shared;
+package se.mau.grupp7.happyplant2.model;
 
 /**
  * Class that calculated how much water a plant needs from the values from the database

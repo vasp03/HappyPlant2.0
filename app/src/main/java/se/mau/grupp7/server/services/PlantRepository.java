@@ -1,8 +1,8 @@
 package se.mau.grupp7.server.services;
 
-import se.mau.grupp7.happyplant2.shared.WaterCalculator;
-import se.mau.grupp7.happyplant2.shared.Plant;
-import se.mau.grupp7.happyplant2.shared.PlantDetails;
+import se.mau.grupp7.happyplant2.model.WaterCalculator;
+import se.mau.grupp7.happyplant2.model.Plant;
+import se.mau.grupp7.happyplant2.model.PlantDetails;
 
 import java.io.IOException;
 import java.sql.ResultSet;
