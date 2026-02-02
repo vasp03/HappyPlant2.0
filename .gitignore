@@ -218,4 +218,7 @@ resources/Testdata
 UsabilityTestProgram.java
 UsabilityTestProgram.class
 /resources/searchHistory.txt
+
 /.gradle
+/.idea
+local.properties
