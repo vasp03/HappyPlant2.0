@@ -4,12 +4,13 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -35,6 +36,7 @@ import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -104,13 +106,13 @@ fun BottomNavigationBar(navController: NavHostController) {
         NavigationItem("home", Icons.Default.Home, "Home"),
         NavigationItem("plantList", Icons.Default.Favorite, "Plants")
     )
-    NavigationBar(containerColor = Color(0xFFF8DEAD)) {
+    NavigationBar(containerColor = Color(0xFF23213E)) {
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = navBackStackEntry?.destination?.route
         items.forEach { item ->
             NavigationBarItem(
-                icon = { Icon(item.icon, contentDescription = item.title) },
-                label = { Text(text = item.title) },
+                icon = { Icon(item.icon, contentDescription = item.title, tint = Color.White) },
+                label = { Text(text = item.title, color = Color.White) },
                 selected = currentRoute == item.route,
                 onClick = {
                     navController.navigate(item.route) {
@@ -127,17 +129,36 @@ data class NavigationItem(val route: String, val icon: ImageVector, val title: S
 
 @Composable
 fun BonsaiScreen() {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        val imageBitmap = ImageBitmap.imageResource(id = R.drawable.bonsai_100)
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Background Image
+        val bgImageBitmap = ImageBitmap.imageResource(id = R.drawable.pixelated_background)
         Image(
-            painter = BitmapPainter(imageBitmap, filterQuality = FilterQuality.None),
-            contentDescription = "Bonsai Tree",
-            modifier = Modifier.fillMaxSize(1f)
+            painter = BitmapPainter(bgImageBitmap, filterQuality = FilterQuality.None),
+            contentDescription = "background",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
         )
+        // Darkness filter
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.2f))
+        )
+        // Plank Image
+        val plankImageBitmap = ImageBitmap.imageResource(id = R.drawable.plank)
+        Image(
+            painter = BitmapPainter(plankImageBitmap, filterQuality = FilterQuality.None),
+            contentDescription = "Plank",
+            modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter),
+            contentScale = ContentScale.FillWidth
+        )
+        // Bonsai Image
+        val bonsaiImageBitmap = ImageBitmap.imageResource(id = R.drawable.bonsai_100)
+        Image(
+                painter = BitmapPainter(bonsaiImageBitmap, filterQuality = FilterQuality.None),
+                contentDescription = "Bonsai Tree",
+                modifier = Modifier.fillMaxWidth().height(400.dp).align(Alignment.BottomCenter)
+            )
     }
 }
 
