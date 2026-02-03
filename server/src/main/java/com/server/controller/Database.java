@@ -6,4 +6,6 @@ public class Database {
     public Database(Controller controller) {
         this.controller = controller;
     }
+
+    
 }

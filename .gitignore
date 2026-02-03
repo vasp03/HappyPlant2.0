@@ -225,3 +225,4 @@ local.properties
 /apk/.gradle
 /apk/.idea
 /server/.vscode
+*.env
