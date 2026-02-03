@@ -224,3 +224,4 @@ local.properties
 /.gradle
 /apk/.gradle
 /apk/.idea
+/server/.vscode
