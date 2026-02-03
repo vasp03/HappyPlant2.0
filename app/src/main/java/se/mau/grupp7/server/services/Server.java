@@ -1,7 +1,5 @@
 package se.mau.grupp7.server.services;
 
-import se.mau.grupp7.server.controller.ResponseController;
-
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -21,20 +19,7 @@ public class Server implements Runnable {
     private ServerSocket serverSocket;
     private final Thread serverThread = new Thread(this);
     private boolean serverRunning;
-    private ResponseController responseController;
     private ExecutorService executor;
-
-    /**
-     * Constructor opens a port and starts a thread to listen for incoming connections/requests
-     *
-     * @param port               port to be used
-     * @param responseController to handle db requests
-     */
-    public Server(int port, ResponseController responseController) {
-        this(port);
-        this.responseController = responseController;
-        executor = Executors.newFixedThreadPool(5);
-    }
 
     /**
      * Simplified constructor
@@ -57,18 +42,5 @@ public class Server implements Runnable {
      */
     @Override
     public void run() {
-        System.out.println("Server running");
-        while (serverRunning) {
-            try {
-                Socket socket = serverSocket.accept();
-                ClientHandlerTask clientHandlerTask = new ClientHandlerTask(socket, responseController);
-                executor.submit(clientHandlerTask);
-            }
-            catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        executor.shutdown();
-        System.out.println("Server stopped");
     }
 }
