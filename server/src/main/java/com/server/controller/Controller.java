@@ -3,17 +3,17 @@ package com.server.controller;
 import com.server.HappyPlant2;
 
 public class Controller {
-    private Database database;
+    private CacheDatabase database;
     private APIRunner apiRunner;
     private HappyPlant2 serverInstance;
 
     public Controller(HappyPlant2 serverInstance) {
         this.serverInstance = serverInstance;
-        this.database = new Database(this);
+        this.database = new CacheDatabase(this);
         this.apiRunner = new APIRunner(this);
     }
 
-    public Database getDatabase() {
+    public CacheDatabase getCacheDatabase() {
         return this.database;
     }
 
