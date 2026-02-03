@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
@@ -26,6 +27,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -121,7 +123,10 @@ fun BottomNavigationBar(navController: NavHostController) {
                         launchSingleTop = true
                         restoreState = true
                     }
-                }
+                },
+                colors = NavigationBarItemDefaults.colors(
+                    indicatorColor = Color(0xFF1A1830)
+                )
             )
         }
     }
@@ -140,12 +145,6 @@ fun BonsaiScreen() {
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
         )
-        // Darkness filter
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.2f))
-        )
         // Plank Image
         val plankImageBitmap = ImageBitmap.imageResource(id = R.drawable.plank)
         Image(
@@ -153,6 +152,12 @@ fun BonsaiScreen() {
             contentDescription = "Plank",
             modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter),
             contentScale = ContentScale.FillWidth
+        )
+        // Darkness filter
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.2f))
         )
         // Bonsai Image
         val bonsaiImageBitmap = ImageBitmap.imageResource(id = R.drawable.bonsai_100)
@@ -167,6 +172,13 @@ fun BonsaiScreen() {
             modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)
         ) {
             Icon(Icons.Default.Settings, contentDescription = "Settings", tint = Color.White)
+        }
+        // Calender Icon
+        IconButton(
+            onClick = { /* TODO: Navigate to settings */ },
+            modifier = Modifier.align(Alignment.TopStart).padding(8.dp)
+        ) {
+            Icon(Icons.Default.DateRange, contentDescription = "Calender", tint = Color.White)
         }
     }
 }
