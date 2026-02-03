@@ -2,6 +2,10 @@ package se.mau.grupp7.happyplant2.model;
 
 public class PlantType {
     private final String name;
+
+    private String scientificName;
+    private int light;
+    private String family;
     private final String description;
     private final String imageURL;
 
