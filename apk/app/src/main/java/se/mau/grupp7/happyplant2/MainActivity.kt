@@ -20,6 +20,10 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -27,22 +31,33 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.Dispatchers
+import android.content.Context
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import se.mau.grupp7.happyplant2.controller.BackendConnector
 import se.mau.grupp7.happyplant2.controller.PlantTypeController
-import se.mau.grupp7.happyplant2.model.UserPlant
+import se.mau.grupp7.happyplant2.model.FlowerTypes
+import se.mau.grupp7.happyplant2.model.PlantDetails
 import se.mau.grupp7.happyplant2.view.theme.HappyPlant2Theme
 
 private var backendConnector: BackendConnector? = null
@@ -65,7 +80,9 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
-    val plantList = remember { backendConnector?.userPlantController?.GetUserPlants() ?: emptyList() }
+    val initialPlantList = emptyList<PlantDetails>()
+    var plantList by remember { mutableStateOf(initialPlantList) }
+    val ctx = LocalContext.current
 
     Scaffold(
         bottomBar = { BottomNavigationBar(navController) },
@@ -78,14 +95,52 @@ fun MainScreen() {
         ) {
             composable("home") { BonsaiScreen() }
             composable("plantList") {
-                GridScreen(
+                FlowerDiscoverScreen(
                     plantTypes = plantList,
-                    onAddPlant = { /* TODO */ },
-                    gotoPlant = { navController.navigate("placeholder") }
+                    getAllPlants = {
+                        getFlowerTypes(ctx) { fetched ->
+                            plantList = fetched
+                        }
+                    }
                 )
             }
             composable("placeholder") { PlaceholderScreen() }
             composable("addPlant") { AddPlantScreen() }
+        }
+    }
+}
+
+fun getFlowerTypes(context: Context, onResult: (List<PlantDetails>) -> Unit){
+    val retrofit = Retrofit.Builder()
+        .baseUrl("http://10.0.2.2:5000/api/v1/")
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
+
+    val api = retrofit.create(se.mau.grupp7.happyplant2.model.PerenualFlowerInterface::class.java)
+
+    if (context is ComponentActivity) {
+        context.lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val res: Array<FlowerTypes> = api.getFlowerTypes()
+
+                val mapped = res.map { ft ->
+                    PlantDetails(
+                        ft.id,
+                        ft.common_name,
+                        ft.scientific_name.joinToString(", "),
+                        ft.genus,
+                        ft.regular_url,
+                    )
+                }
+
+                withContext(Dispatchers.Main) {
+                    onResult(mapped)
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Request failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 }
@@ -141,7 +196,7 @@ fun BonsaiScreen() {
  * Screen With The Users Plants
  */
 @Composable
-fun GridScreen(plantTypes: List<UserPlant>, onAddPlant: () -> Unit, gotoPlant: () -> Unit) {
+fun FlowerDiscoverScreen(plantTypes: List<PlantDetails>, getAllPlants: () -> Unit) {
     Column(Modifier.fillMaxSize()) {
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
@@ -153,53 +208,41 @@ fun GridScreen(plantTypes: List<UserPlant>, onAddPlant: () -> Unit, gotoPlant: (
             }
         }
         Button(
-            onClick = onAddPlant,
+            onClick = getAllPlants,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp) // Stick to the bottom
         ) {
-            Text(text = "Water all Plants")
-        }
-        Button(
-            onClick = gotoPlant,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp) // Stick to the bottom
-        ) {
-            Text(text = "Add Plant")
+            Text(text = "Get All Plants")
         }
     }
 }
 
 @Composable
-fun PlantCard(userPlant: UserPlant) {
+fun PlantCard(userPlant: PlantDetails) {
     Card(modifier = Modifier.padding(8.dp)) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(text = userPlant.name)
-        }
+        Column(modifier = Modifier.fillMaxWidth()) {
+            // Thumbnail image
+            AsyncImage(
+                model = userPlant.imageUrl,
+                contentDescription = userPlant.common_name,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(140.dp),
+                contentScale = ContentScale.Crop
+            )
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(text = userPlant.description)
-        }
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            contentAlignment = Alignment.BottomEnd
-        ){
-            Button(onClick = { backendConnector?.userPlantController?.WaterUserPlant(userPlant) }) {
-                Text(text = "Water")
+            // Name and description
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                contentAlignment = Alignment.TopStart
+            ) {
+                Column {
+                    Text(text = userPlant.common_name)
+                    Text(text = userPlant.scientific_name)
+                }
             }
         }
     }

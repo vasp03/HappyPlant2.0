@@ -3,6 +3,8 @@ package se.mau.grupp7.happyplant2.controller;
 import java.util.ArrayList;
 import java.util.Date;
 
+import se.mau.grupp7.happyplant2.model.Plant;
+import se.mau.grupp7.happyplant2.model.PlantDetails;
 import se.mau.grupp7.happyplant2.model.UserPlant;
 
 public class UserPlantController {
@@ -16,8 +18,8 @@ public class UserPlantController {
         return backendConnector.getServerConnection().GetUserPlants();
     }
 
-    public UserPlant AddUserPlant(UserPlant userPlant) {
-        return backendConnector.getServerConnection().AddUserPlant(userPlant);
+    public UserPlant AddUserPlant(PlantDetails plantDetails) {
+        return backendConnector.getServerConnection().AddUserPlant(plantDetails);
     }
 
     public UserPlant UpdateUserPlant(UserPlant userPlant) {
