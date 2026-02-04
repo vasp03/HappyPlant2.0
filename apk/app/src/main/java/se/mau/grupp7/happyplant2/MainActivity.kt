@@ -149,14 +149,14 @@ fun BonsaiScreen() {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.2f))
+                .background(Color.Black.copy(alpha = 0.3f))
         )
         // Bonsai Image
         val bonsaiImageBitmap = ImageBitmap.imageResource(id = R.drawable.bonsai_100)
         Image(
                 painter = BitmapPainter(bonsaiImageBitmap, filterQuality = FilterQuality.None),
                 contentDescription = "Bonsai Tree",
-                modifier = Modifier.fillMaxWidth().height(400.dp).align(Alignment.BottomCenter)
+                modifier = Modifier.fillMaxWidth().height(550.dp).align(Alignment.BottomCenter)
             )
         // Settings Icon
         IconButton(
