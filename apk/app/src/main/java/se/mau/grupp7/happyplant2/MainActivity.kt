@@ -145,14 +145,6 @@ fun BonsaiScreen() {
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
         )
-        // Plank Image
-        val plankImageBitmap = ImageBitmap.imageResource(id = R.drawable.plank)
-        Image(
-            painter = BitmapPainter(plankImageBitmap, filterQuality = FilterQuality.None),
-            contentDescription = "Plank",
-            modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter),
-            contentScale = ContentScale.FillWidth
-        )
         // Darkness filter
         Box(
             modifier = Modifier
