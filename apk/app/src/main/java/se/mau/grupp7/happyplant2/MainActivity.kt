@@ -4,25 +4,30 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,8 +36,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -78,44 +87,46 @@ fun MainScreen() {
         ) {
             composable("home") { BonsaiScreen() }
             composable("plantList") {
-                GridScreen(
-                    plantTypes = plantList,
-                    onAddPlant = { /* TODO */ },
-                    gotoPlant = { navController.navigate("placeholder") }
-                )
+                PlantsScreen(
+                    plantList,
+                    { /* TODO */ },
+                    { navController.navigate("placeHolder") })
             }
             composable("placeholder") { PlaceholderScreen() }
-            composable("addPlant") { AddPlantScreen() }
+            composable("addPlant") { AddNewPlantScreen() }
         }
     }
 }
 
 @Composable
-fun AddPlantScreen(){
+fun AddNewPlantScreen(){
     Text("Hello")
 }
 
 @Composable
 fun BottomNavigationBar(navController: NavHostController) {
     val items = listOf(
+        NavigationItem("placeholder", Icons.Default.Info, "Info"),
         NavigationItem("home", Icons.Default.Home, "Home"),
-        NavigationItem("plantList", Icons.AutoMirrored.Filled.List, "Grid"),
-        NavigationItem("placeholder", Icons.Default.Settings, "Placeholder")
+        NavigationItem("plantList", Icons.Default.Favorite, "Plants")
     )
-    NavigationBar(containerColor = Color(0xFFF8DEAD)) {
+    NavigationBar(containerColor = Color(0xFF23213E)) {
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = navBackStackEntry?.destination?.route
         items.forEach { item ->
             NavigationBarItem(
-                icon = { Icon(item.icon, contentDescription = item.title) },
-                label = { Text(text = item.title) },
+                icon = { Icon(item.icon, contentDescription = item.title, tint = Color.White) },
+                label = { Text(text = item.title, color = Color.White) },
                 selected = currentRoute == item.route,
                 onClick = {
                     navController.navigate(item.route) {
                         launchSingleTop = true
                         restoreState = true
                     }
-                }
+                },
+                colors = NavigationBarItemDefaults.colors(
+                    indicatorColor = Color(0xFF1A1830)
+                )
             )
         }
     }
@@ -125,15 +136,42 @@ data class NavigationItem(val route: String, val icon: ImageVector, val title: S
 
 @Composable
 fun BonsaiScreen() {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Background Image
+        val bgImageBitmap = ImageBitmap.imageResource(id = R.drawable.pixelated_background)
         Image(
-            painter = painterResource(id = R.drawable.bonsai_100),
-            contentDescription = "Bonsai Tree"
+            painter = BitmapPainter(bgImageBitmap, filterQuality = FilterQuality.None),
+            contentDescription = "background",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
         )
+        // Darkness filter
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.35f))
+        )
+        // Bonsai Image
+        val bonsaiImageBitmap = ImageBitmap.imageResource(id = R.drawable.bonsai_100)
+        Image(
+                painter = BitmapPainter(bonsaiImageBitmap, filterQuality = FilterQuality.None),
+                contentDescription = "Bonsai Tree",
+                modifier = Modifier.fillMaxWidth().height(550.dp).align(Alignment.BottomCenter)
+            )
+        // Settings Icon
+        IconButton(
+            onClick = { /* TODO: Navigate to settings */ },
+            modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)
+        ) {
+            Icon(Icons.Default.Settings, contentDescription = "Settings", tint = Color.White)
+        }
+        // Calender Icon
+        IconButton(
+            onClick = { /* TODO: Navigate to settings */ },
+            modifier = Modifier.align(Alignment.TopStart).padding(8.dp)
+        ) {
+            Icon(Icons.Default.DateRange, contentDescription = "Calender", tint = Color.White)
+        }
     }
 }
 
@@ -141,7 +179,7 @@ fun BonsaiScreen() {
  * Screen With The Users Plants
  */
 @Composable
-fun GridScreen(plantTypes: List<UserPlant>, onAddPlant: () -> Unit, gotoPlant: () -> Unit) {
+fun PlantsScreen(plantTypes: List<UserPlant>, onAddPlant: () -> Unit, gotoPlant: () -> Unit) {
     Column(Modifier.fillMaxSize()) {
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
