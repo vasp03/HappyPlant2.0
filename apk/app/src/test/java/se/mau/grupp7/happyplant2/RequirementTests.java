@@ -127,6 +127,80 @@ public class RequirementTests {
         long daysSinceWatered = TimeUnit.DAYS.convert(diffInMillies, TimeUnit.MILLISECONDS);
         return intervalDays - daysSinceWatered;
     }
+    /**
+     * Verifierar kravet INF04F genom att testa ett normalfall
+     * där växten är inom sitt vattningsintervall. Detta är INTE
+     * implementerat och därav har vi metoden getDateDaysAgo
+     * nedan till hjälp!
+     */
+    @Test
+    public void testDaysUntilWatering_WithinInterval() {
+        int interval = 7;
+        UserPlant plantNormal = new UserPlant("Normal", "", "", interval, WaterAmount.RARELY, getDateDaysAgo(5));
+
+        long daysLeft = daysUntilWatering(plantNormal.getLastTimeWatered(), plantNormal.getWateringInterval());
+
+        assertEquals("Ska vara 2 dagar kvar (normalfall)", 2, daysLeft);
+    }
+
+    /**
+     * Verifierar kravet INF04F genom att testa gränsvärdet
+     * där växten ska vattnas exakt idag. Detta är INTE
+     * implementerat och därav har vi metoden getDateDaysAgo
+     * nedan till hjälp!
+     */
+    @Test
+    public void testDaysUntilWatering_DueToday() {
+        int interval = 7;
+        UserPlant plantDue = new UserPlant("Dags", "", "", interval, WaterAmount.RARELY, getDateDaysAgo(7));
+
+        long daysLeft = daysUntilWatering(plantDue.getLastTimeWatered(), plantDue.getWateringInterval());
+
+        assertEquals("Ska vara 0 dagar kvar (vattna idag)", 0, daysLeft);
+    }
+
+    /**
+     * Verifierar kravet INF04F genom att testa gränsvärdet
+     * där växten skulle ha vattnats igår (negativt värde).
+     * Detta är INTE implementerat och därav har vi metoden
+     * getDateDaysAgo nedan till hjälp!
+     */
+    @Test
+    public void testDaysUntilWatering_Overdue() {
+        int interval = 7;
+        UserPlant plantOverdue = new UserPlant("Sen", "", "", interval, WaterAmount.RARELY, getDateDaysAgo(8));
+
+        long daysLeft = daysUntilWatering(plantOverdue.getLastTimeWatered(), plantOverdue.getWateringInterval());
+
+        assertEquals("Ska vara -1 dag kvar (missad vattning)", -1, daysLeft);
+    }
+
+    /**
+     * Verifierar kravet INF04F genom att testa gränsvärdet
+     * där växten precis har blivit vattnad. Detta är INTE
+     * implementerat och därav har vi metoden getDateDaysAgo
+     * nedan till hjälp!
+     */
+    @Test
+    public void testDaysUntilWatering_JustWatered() {
+        int interval = 7;
+        UserPlant plantFresh = new UserPlant("Ny", "", "", interval, WaterAmount.RARELY, getDateDaysAgo(0));
+
+        long daysLeft = daysUntilWatering(plantFresh.getLastTimeWatered(), plantFresh.getWateringInterval());
+
+        assertEquals("Ska vara 7 dagar kvar (nyvattnad)", 7, daysLeft);
+    }
+
+    /**
+     * Hjälpmetod för att skapa ett datum X dagar bakåt i tiden.
+     * Detta ska bort! Har skapats för att kunna se att testerna
+     * är korrekt skapade!
+     */
+    private Date getDateDaysAgo(int days) {
+        long daysInMillis = days * 24L * 60 * 60 * 1000;
+        return new Date(System.currentTimeMillis() - daysInMillis);
+    }
+
 
     /**
      * Verifierar kravet SEK02IF genom att testa att lösenord inte
