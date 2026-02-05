@@ -149,7 +149,7 @@ fun BonsaiScreen() {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.3f))
+                .background(Color.Black.copy(alpha = 0.35f))
         )
         // Bonsai Image
         val bonsaiImageBitmap = ImageBitmap.imageResource(id = R.drawable.bonsai_100)
