@@ -1,8 +1,11 @@
 package se.mau.grupp7.happyplant2
 
+import android.annotation.SuppressLint
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,6 +13,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -20,69 +24,53 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.foundation.layout.height
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import kotlinx.coroutines.Dispatchers
-import android.content.Context
-import android.widget.Toast
-import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
-import se.mau.grupp7.happyplant2.controller.BackendConnector
-import se.mau.grupp7.happyplant2.controller.PlantTypeController
-import se.mau.grupp7.happyplant2.model.FlowerTypes
+import coil.compose.AsyncImage
 import se.mau.grupp7.happyplant2.model.PlantDetails
+import se.mau.grupp7.happyplant2.model.UserPlant
 import se.mau.grupp7.happyplant2.view.theme.HappyPlant2Theme
-
-private var backendConnector: BackendConnector? = null
-private var plantTypeController: PlantTypeController? = null
+import se.mau.grupp7.happyplant2.viewmodel.PlantViewModel
 
 class MainActivity : ComponentActivity() {
+    private val viewModel: PlantViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        setup()
-
         setContent {
             HappyPlant2Theme {
-                MainScreen()
+                MainScreen(viewModel)
             }
         }
     }
 }
 
 @Composable
-fun MainScreen() {
+fun MainScreen(viewModel: PlantViewModel) {
     val navController = rememberNavController()
-    val initialPlantList = emptyList<PlantDetails>()
-    var plantList by remember { mutableStateOf(initialPlantList) }
-    val ctx = LocalContext.current
+    val plantList by viewModel.flowerList.collectAsState()
+    val userPlants by viewModel.userPlants.collectAsState()
+    val context = LocalContext.current
 
     Scaffold(
         bottomBar = { BottomNavigationBar(navController) },
@@ -94,68 +82,32 @@ fun MainScreen() {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable("home") { BonsaiScreen() }
-            composable("plantList") {
-                FlowerDiscoverScreen(
-                    plantTypes = plantList,
-                    getAllPlants = {
-                        getFlowerTypes(ctx) { fetched ->
-                            plantList = fetched
-                        }
+            composable("discover") { FlowerDiscoverScreen(
+                plantTypes = plantList,
+                getAllPlants = { viewModel.getFlowers("rose") },
+                onAdd = { plantDetails -> 
+                    viewModel.addPlantToUserCollection(plantDetails) {
+                        Toast.makeText(context, "Failed to add plant", Toast.LENGTH_SHORT).show()
                     }
+                }
+            ) }
+            composable("myPlants") {
+                MyPlantsScreen(
+                    userPlants = userPlants,
+                    onWater = { plant -> viewModel.waterUserPlant(plant) },
+                    onDelete = { plant -> viewModel.deleteUserPlant(plant) }
                 )
             }
-            composable("placeholder") { PlaceholderScreen() }
-            composable("addPlant") { AddPlantScreen() }
         }
     }
-}
-
-fun getFlowerTypes(context: Context, onResult: (List<PlantDetails>) -> Unit){
-    val retrofit = Retrofit.Builder()
-        .baseUrl("http://10.0.2.2:5000/api/v1/")
-        .addConverterFactory(GsonConverterFactory.create())
-        .build()
-
-    val api = retrofit.create(se.mau.grupp7.happyplant2.model.PerenualFlowerInterface::class.java)
-
-    if (context is ComponentActivity) {
-        context.lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val res: Array<FlowerTypes> = api.getFlowerTypes()
-
-                val mapped = res.map { ft ->
-                    PlantDetails(
-                        ft.id,
-                        ft.common_name,
-                        ft.scientific_name.joinToString(", "),
-                        ft.genus,
-                        ft.regular_url,
-                    )
-                }
-
-                withContext(Dispatchers.Main) {
-                    onResult(mapped)
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Request failed: ${e.message}", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun AddPlantScreen(){
-    Text("Hello")
 }
 
 @Composable
 fun BottomNavigationBar(navController: NavHostController) {
     val items = listOf(
         NavigationItem("home", Icons.Default.Home, "Home"),
-        NavigationItem("plantList", Icons.AutoMirrored.Filled.List, "Grid"),
-        NavigationItem("placeholder", Icons.Default.Settings, "Placeholder")
+        NavigationItem("discover", Icons.AutoMirrored.Filled.List, "Discover"),
+        NavigationItem("myPlants", Icons.Default.Settings, "My Plants")
     )
     NavigationBar(containerColor = Color(0xFFF8DEAD)) {
         val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -192,56 +144,56 @@ fun BonsaiScreen() {
     }
 }
 
-/**
- * Screen With The Users Plants
- */
 @Composable
-fun FlowerDiscoverScreen(plantTypes: List<PlantDetails>, getAllPlants: () -> Unit) {
+fun FlowerDiscoverScreen(
+    plantTypes: List<PlantDetails>,
+    getAllPlants: () -> Unit,
+    onAdd: (PlantDetails) -> Unit
+) {
     Column(Modifier.fillMaxSize()) {
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             contentPadding = PaddingValues(8.dp),
-            modifier = Modifier.weight(1f) // Make the grid take up all available space
+            modifier = Modifier.weight(1f)
         ) {
             items(plantTypes) { plantType ->
-                PlantCard(plantType)
+                PlantCard(plantType, onAdd = { onAdd(plantType) })
             }
         }
         Button(
             onClick = getAllPlants,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp) // Stick to the bottom
+                .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            Text(text = "Get All Plants")
+            Text(text = "Get Plants (Rose)")
         }
     }
 }
 
 @Composable
-fun PlantCard(userPlant: PlantDetails) {
+fun PlantCard(
+    plantDetails: PlantDetails,
+    onAdd: () -> Unit
+) {
     Card(modifier = Modifier.padding(8.dp)) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            // Thumbnail image
             AsyncImage(
-                model = userPlant.imageUrl,
-                contentDescription = userPlant.common_name,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(140.dp),
+                model = plantDetails.imageUrl,
+                contentDescription = plantDetails.common_name,
+                modifier = Modifier.fillMaxWidth().height(140.dp),
                 contentScale = ContentScale.Crop
             )
-
-            // Name and description
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp),
+                modifier = Modifier.fillMaxWidth().padding(12.dp),
                 contentAlignment = Alignment.TopStart
             ) {
                 Column {
-                    Text(text = userPlant.common_name)
-                    Text(text = userPlant.scientific_name)
+                    Text(text = plantDetails.common_name)
+                    Text(text = plantDetails.scientific_name)
+                    Button(onClick = onAdd) {
+                        Text("Add to My Plants")
+                    }
                 }
             }
         }
@@ -249,34 +201,65 @@ fun PlantCard(userPlant: PlantDetails) {
 }
 
 @Composable
-fun PlaceholderScreen() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+fun MyPlantsScreen(
+    userPlants: List<UserPlant>,
+    onWater: (UserPlant) -> Unit,
+    onDelete: (UserPlant) -> Unit
+) {
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        contentPadding = PaddingValues(8.dp),
+        modifier = Modifier.fillMaxSize()
     ) {
-        Text(text = "No plant has been selected")
+        items(userPlants) { plant ->
+            UserPlantCard(
+                plant = plant,
+                onWater = onWater,
+                onDelete = onDelete
+            )
+        }
     }
 }
 
+@Composable
+fun UserPlantCard(
+    plant: UserPlant,
+    onWater: (UserPlant) -> Unit,
+    onDelete: (UserPlant) -> Unit
+) {
+    Card(modifier = Modifier.padding(8.dp)) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            AsyncImage(
+                model = plant.imageURL,
+                contentDescription = plant.name,
+                modifier = Modifier.fillMaxWidth().height(140.dp),
+                contentScale = ContentScale.Crop
+            )
+            Box(
+                modifier = Modifier.fillMaxWidth().padding(12.dp),
+                contentAlignment = Alignment.TopStart
+            ) {
+                Column {
+                    Text(text = plant.name)
+                    Text(text = plant.description)
+                    Text(text = "Needs water in ${plant.daysUntilWatering()} days")
+                    Button(onClick = { onWater(plant) }) {
+                        Text("Water Now")
+                    }
+                    Button(onClick = { onDelete(plant) }) {
+                        Text("Delete")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@SuppressLint("ViewModelConstructorInComposable")
 @Preview(showBackground = true)
 @Composable
 fun DefaultPreview() {
     HappyPlant2Theme {
-        MainScreen()
+        MainScreen(PlantViewModel())
     }
-}
-
-
-fun setup() {
-    // Setup is run here.
-    // Java classes that connects to backend server is initialize here.
-    backendConnector = BackendConnector()
-
-    // Throwing NullPointerException here if setup won't work.
-    if (backendConnector == null) {
-        throw NullPointerException()
-    }
-
-    backendConnector?.setup()
-    plantTypeController = PlantTypeController(backendConnector)
 }

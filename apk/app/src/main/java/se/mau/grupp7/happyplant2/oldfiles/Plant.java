@@ -1,6 +1,4 @@
-package se.mau.grupp7.happyplant2.model;
-
-//import se.mau.client.model.PictureRandomizer;
+package se.mau.grupp7.happyplant2.oldfiles;
 
 import java.io.Serializable;
 import java.sql.Date;

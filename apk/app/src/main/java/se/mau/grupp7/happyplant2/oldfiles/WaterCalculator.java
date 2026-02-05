@@ -1,4 +1,4 @@
-package se.mau.grupp7.happyplant2.model;
+package se.mau.grupp7.happyplant2.oldfiles;
 
 /**
  * Class that calculated how much water a plant needs from the values from the database
@@ -16,7 +16,7 @@ public class WaterCalculator {
      */
     public static long calculateWaterFrequencyForWatering(int waterFrequency) {
         long waterFrequencyMilli;
-        long week = 604000000L;
+        long week = 604800000L; // Corrected to 7 days in ms
         if (waterFrequency <= 200) {
             waterFrequencyMilli = week * 4;
         } else if (waterFrequency <= 400) {
