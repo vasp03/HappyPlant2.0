@@ -97,7 +97,7 @@ fun MainScreen() {
 
     Scaffold(
         bottomBar = { BottomNavigationBar(navController) },
-        containerColor = Color(0xFFF8DEAD)
+        containerColor = Color(0xFF23213E)
     ) { innerPadding ->
         NavHost(
             navController = navController,
