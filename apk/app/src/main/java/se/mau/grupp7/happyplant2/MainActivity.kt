@@ -27,20 +27,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Forest
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.WaterDrop
-import androidx.compose.material.icons.filled.Forest
 import androidx.compose.material.icons.filled.Yard
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.foundation.layout.height
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
@@ -68,6 +62,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import android.content.Context
 import android.widget.Toast
@@ -82,10 +81,6 @@ import se.mau.grupp7.happyplant2.controller.PlantTypeController
 import se.mau.grupp7.happyplant2.model.FlowerTypes
 import se.mau.grupp7.happyplant2.model.PlantDetails
 import se.mau.grupp7.happyplant2.view.theme.HappyPlant2Theme
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
 
 private var backendConnector: BackendConnector? = null
 private var plantTypeController: PlantTypeController? = null
@@ -121,7 +116,7 @@ fun MainScreen() {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable("home") { BonsaiScreen() }
-            composable("plantList") {
+            composable("search") {
                 PlantDiscoverScreen(
                     plantTypes = plantList,
                     getAllPlants = {
@@ -131,7 +126,7 @@ fun MainScreen() {
                     }
                 )
             }
-            composable("search") { SearchScreen() }
+            composable("plantList") { Text("Hello") }
             composable("addPlant") { AddNewPlantScreen() }
         }
     }
@@ -181,8 +176,8 @@ fun AddNewPlantScreen(){
 fun BottomNavigationBar(navController: NavHostController) {
     val items = listOf(
         NavigationItem("search", Icons.AutoMirrored.Filled.MenuBook, "Search"),
-        NavigationItem("home", Icons.Default.Forest, "Home"),
-        NavigationItem("plantList", Icons.Default.Yard, "Your Plants")
+        NavigationItem("home", Icons.Filled.Forest, "Home"),
+        NavigationItem("plantList", Icons.Filled.Yard, "Your Plants")
     )
     NavigationBar(containerColor = Color(0xFF23213E)) {
         val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -244,7 +239,7 @@ fun DayItem(date: Date, needsWatering: Boolean) {
         Text(text = dateFormat.format(date))
         if (needsWatering) {
             Icon(
-                Icons.Default.WaterDrop,
+                Icons.Filled.WaterDrop,
                 contentDescription = "Needs watering",
                 tint = Color.Blue,
                 modifier = Modifier
@@ -316,7 +311,7 @@ fun BonsaiScreen() {
                 .background(Color(Color.Black.copy(alpha = 0.30f).value), shape = CircleShape)
         ) {
             Icon(
-                imageVector = Icons.Default.Settings,
+                imageVector = Icons.Filled.Settings,
                 contentDescription = "Calender",
                 tint = Color.White,
                 modifier = Modifier.size(36.dp),
@@ -332,7 +327,7 @@ fun BonsaiScreen() {
                 .background(Color(Color.Black.copy(alpha = 0.30f).value), shape = CircleShape)
         ) {
             Icon(
-                imageVector = Icons.Default.DateRange,
+                imageVector = Icons.Filled.DateRange,
                 contentDescription = "Calender",
                 tint = Color.White,
                 modifier = Modifier.size(36.dp)
@@ -354,22 +349,25 @@ fun BonsaiScreen() {
  */
 @Composable
 fun PlantDiscoverScreen(plantTypes: List<PlantDetails>, getAllPlants: () -> Unit) {
-    Column(Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize()) {
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(8.dp),
+            // add bottom padding so the grid's content isn't obscured by the button
+            contentPadding = PaddingValues(start = 8.dp, top = 8.dp, end = 8.dp, bottom = 96.dp),
             modifier = Modifier.fillMaxSize()
         ) {
             items(plantTypes) { plantType ->
                 PlantCard(plantType)
             }
         }
+
         Button(
             onClick = getAllPlants,
             modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                .align(Alignment.BottomCenter)
+                .padding(16.dp)
+                .fillMaxWidth(0.9f)
+
         ) {
             Text(text = "Get All Plants")
         }
@@ -422,7 +420,7 @@ fun SearchScreen() {
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.Search, contentDescription = "Search Icon")
+            Icon(Icons.Filled.Search, contentDescription = "Search Icon")
             Spacer(modifier = Modifier.width(8.dp))
             Text("Search...", color = Color.Gray)
         }
