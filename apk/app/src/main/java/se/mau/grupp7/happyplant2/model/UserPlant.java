@@ -9,14 +9,16 @@ public class UserPlant {
     private final int wateringInterval;
     private final WaterAmount wateringAmount;
     private final Date lastTimeWatered;
+    private final String category;
 
-    public UserPlant(String name, String description, String imageURL, int wateringInterval, WaterAmount wateringAmount, Date lastTimeWatered) {
+    public UserPlant(String name, String description, String imageURL, int wateringInterval, WaterAmount wateringAmount, Date lastTimeWatered, String category) {
         this.name = name;
         this.description = description;
         this.imageURL = imageURL;
         this.wateringInterval = wateringInterval;
         this.wateringAmount = wateringAmount;
         this.lastTimeWatered = lastTimeWatered;
+        this.category = category;
     }
 
     public String getName() {
@@ -40,8 +42,11 @@ public class UserPlant {
         return wateringAmount;
     }
 
-
     public Date getLastTimeWatered() {
         return lastTimeWatered;
+    }
+
+    public String getCategory() {
+        return category;
     }
 }

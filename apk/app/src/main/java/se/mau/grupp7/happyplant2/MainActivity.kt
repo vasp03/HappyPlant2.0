@@ -4,29 +4,48 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.material.icons.filled.Forest
+import androidx.compose.material.icons.filled.Yard
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.foundation.layout.height
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,8 +56,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -59,6 +82,10 @@ import se.mau.grupp7.happyplant2.controller.PlantTypeController
 import se.mau.grupp7.happyplant2.model.FlowerTypes
 import se.mau.grupp7.happyplant2.model.PlantDetails
 import se.mau.grupp7.happyplant2.view.theme.HappyPlant2Theme
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 private var backendConnector: BackendConnector? = null
 private var plantTypeController: PlantTypeController? = null
@@ -86,7 +113,7 @@ fun MainScreen() {
 
     Scaffold(
         bottomBar = { BottomNavigationBar(navController) },
-        containerColor = Color(0xFFF8DEAD)
+        containerColor = Color(0xFF23213E)
     ) { innerPadding ->
         NavHost(
             navController = navController,
@@ -95,7 +122,7 @@ fun MainScreen() {
         ) {
             composable("home") { BonsaiScreen() }
             composable("plantList") {
-                FlowerDiscoverScreen(
+                PlantDiscoverScreen(
                     plantTypes = plantList,
                     getAllPlants = {
                         getFlowerTypes(ctx) { fetched ->
@@ -104,8 +131,8 @@ fun MainScreen() {
                     }
                 )
             }
-            composable("placeholder") { PlaceholderScreen() }
-            composable("addPlant") { AddPlantScreen() }
+            composable("search") { SearchScreen() }
+            composable("addPlant") { AddNewPlantScreen() }
         }
     }
 }
@@ -146,31 +173,35 @@ fun getFlowerTypes(context: Context, onResult: (List<PlantDetails>) -> Unit){
 }
 
 @Composable
-fun AddPlantScreen(){
+fun AddNewPlantScreen(){
     Text("Hello")
 }
 
 @Composable
 fun BottomNavigationBar(navController: NavHostController) {
     val items = listOf(
-        NavigationItem("home", Icons.Default.Home, "Home"),
-        NavigationItem("plantList", Icons.AutoMirrored.Filled.List, "Grid"),
-        NavigationItem("placeholder", Icons.Default.Settings, "Placeholder")
+        NavigationItem("search", Icons.AutoMirrored.Filled.MenuBook, "Search"),
+        NavigationItem("home", Icons.Default.Forest, "Home"),
+        NavigationItem("plantList", Icons.Default.Yard, "Your Plants")
     )
-    NavigationBar(containerColor = Color(0xFFF8DEAD)) {
+    NavigationBar(containerColor = Color(0xFF23213E)) {
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = navBackStackEntry?.destination?.route
         items.forEach { item ->
             NavigationBarItem(
-                icon = { Icon(item.icon, contentDescription = item.title) },
-                label = { Text(text = item.title) },
+                icon = { Icon(item.icon, contentDescription = item.title, tint = Color.White) },
+                label = { Text(text = item.title, color = Color.White) },
                 selected = currentRoute == item.route,
                 onClick = {
                     navController.navigate(item.route) {
                         launchSingleTop = true
                         restoreState = true
                     }
-                }
+                },
+                colors = NavigationBarItemDefaults.colors(
+                    indicatorColor = Color(0xFF1A1830)
+                ),
+                modifier = Modifier.size(32.dp)
             )
         }
     }
@@ -179,16 +210,142 @@ fun BottomNavigationBar(navController: NavHostController) {
 data class NavigationItem(val route: String, val icon: ImageVector, val title: String)
 
 @Composable
-fun BonsaiScreen() {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+fun CalendarView(modifier: Modifier = Modifier) {
+    val calendar = Calendar.getInstance()
+    val dates = (0..30).map {
+        val newDate = calendar.clone() as Calendar
+        newDate.add(Calendar.DAY_OF_YEAR, it)
+        newDate.time
+    }
+
+    LazyRow(
+        modifier = modifier,
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        items(dates) { date ->
+            DayItem(date = date, needsWatering = (date.date % 3 == 0)) // Testdata för vattning
+        }
+    }
+}
+
+@Composable
+fun DayItem(date: Date, needsWatering: Boolean) {
+    val dayFormat = SimpleDateFormat("EEE", Locale.getDefault())
+    val dateFormat = SimpleDateFormat("dd", Locale.getDefault())
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .background(Color.White.copy(alpha = 0.8f), shape = RoundedCornerShape(8.dp))
+            .padding(8.dp)
+    ) {
+        Text(text = dayFormat.format(date))
+        Text(text = dateFormat.format(date))
+        if (needsWatering) {
+            Icon(
+                Icons.Default.WaterDrop,
+                contentDescription = "Needs watering",
+                tint = Color.Blue,
+                modifier = Modifier
+                    .size(16.dp)
+                    .padding(top = 4.dp)
+            )
+        } else {
+            Box(modifier = Modifier.size(16.dp).padding(top = 4.dp))
+        }
+    }
+}
+
+@Composable
+fun BonsaiScreen() {
+    var isCalendarVisible by remember { mutableStateOf(false) }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Background Image
+        val bgImageBitmap = ImageBitmap.imageResource(id = R.drawable.pixelated_background)
         Image(
-            painter = painterResource(id = R.drawable.bonsai_100),
-            contentDescription = "Bonsai Tree"
+            painter = BitmapPainter(bgImageBitmap, filterQuality = FilterQuality.None),
+            contentDescription = "background",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
         )
+        // Darkness filter for background image
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.20f))
+        )
+        // Darkness background for Bonsai Image
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(530.dp)
+                .align(Alignment.BottomCenter)
+                .padding(16.dp),
+            contentAlignment = Alignment.BottomCenter
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(550.dp)
+                    .background(
+                        color = Color.Black.copy(alpha = 0.50f),
+                        shape = RoundedCornerShape(20.dp)
+                    )
+            )
+
+            // 2. The Bonsai Image, drawn on top of the background
+            val bonsaiImageBitmap = ImageBitmap.imageResource(id = R.drawable.bonsai_100)
+            Image(
+                painter = BitmapPainter( bonsaiImageBitmap, filterQuality = FilterQuality.None),
+                contentDescription = "Bonsai Tree",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(550.dp)
+            )
+        }
+
+        // Settings Icon
+        IconButton(
+            onClick = { /* TODO: Navigate to settings */ },
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(12.dp)
+                .size(48.dp)
+                .background(Color(Color.Black.copy(alpha = 0.30f).value), shape = CircleShape)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Settings,
+                contentDescription = "Calender",
+                tint = Color.White,
+                modifier = Modifier.size(36.dp),
+            )
+        }
+        // Calender Icon
+        IconButton(
+            onClick = { isCalendarVisible = !isCalendarVisible },
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(12.dp)
+                .size(48.dp)
+                .background(Color(Color.Black.copy(alpha = 0.30f).value), shape = CircleShape)
+        ) {
+            Icon(
+                imageVector = Icons.Default.DateRange,
+                contentDescription = "Calender",
+                tint = Color.White,
+                modifier = Modifier.size(36.dp)
+            )
+        }
+
+        if (isCalendarVisible) {
+            CalendarView(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 80.dp)
+            )
+        }
     }
 }
 
@@ -196,12 +353,12 @@ fun BonsaiScreen() {
  * Screen With The Users Plants
  */
 @Composable
-fun FlowerDiscoverScreen(plantTypes: List<PlantDetails>, getAllPlants: () -> Unit) {
+fun PlantDiscoverScreen(plantTypes: List<PlantDetails>, getAllPlants: () -> Unit) {
     Column(Modifier.fillMaxSize()) {
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             contentPadding = PaddingValues(8.dp),
-            modifier = Modifier.weight(1f) // Make the grid take up all available space
+            modifier = Modifier.fillMaxSize()
         ) {
             items(plantTypes) { plantType ->
                 PlantCard(plantType)
@@ -210,8 +367,9 @@ fun FlowerDiscoverScreen(plantTypes: List<PlantDetails>, getAllPlants: () -> Uni
         Button(
             onClick = getAllPlants,
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp) // Stick to the bottom
+                .align(Alignment.BottomEnd)
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(text = "Get All Plants")
         }
@@ -249,12 +407,25 @@ fun PlantCard(userPlant: PlantDetails) {
 }
 
 @Composable
-fun PlaceholderScreen() {
+fun SearchScreen() {
     Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFa295e8))
+            .padding(16.dp),
+        contentAlignment = Alignment.TopCenter
     ) {
-        Text(text = "No plant has been selected")
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.White, shape = CircleShape)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Default.Search, contentDescription = "Search Icon")
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Search...", color = Color.Gray)
+        }
     }
 }
 

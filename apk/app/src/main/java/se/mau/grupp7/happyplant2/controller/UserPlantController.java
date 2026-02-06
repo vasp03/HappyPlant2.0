@@ -37,10 +37,11 @@ public class UserPlantController {
                 userPlant.getImageURL(),
                 userPlant.getWateringInterval(),
                 userPlant.getWateringAmount(),
-                new Date()
+                new Date(),
+                userPlant.getCategory()
         );
 
-        UserPlant updatedPlant = backendConnector.getServerConnection().UpdateUserPlant(userPlant);
+        UserPlant updatedPlant = backendConnector.getServerConnection().UpdateUserPlant(wateredPlant);
 
         return updatedPlant != null;
     }
