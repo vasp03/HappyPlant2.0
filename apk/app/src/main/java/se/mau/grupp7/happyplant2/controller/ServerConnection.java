@@ -3,6 +3,7 @@ package se.mau.grupp7.happyplant2.controller;
 import java.util.ArrayList;
 import java.util.Date;
 
+import se.mau.grupp7.happyplant2.model.PlantDetails;
 import se.mau.grupp7.happyplant2.model.PlantType;
 import se.mau.grupp7.happyplant2.model.UserPlant;
 import se.mau.grupp7.happyplant2.model.WaterAmount;
@@ -35,7 +36,7 @@ public class ServerConnection {
         return plantTypes;
     }
 
-    public UserPlant AddUserPlant(UserPlant userPlant) {
+    public UserPlant AddUserPlant(PlantDetails plant) {
         return null;
     }
 

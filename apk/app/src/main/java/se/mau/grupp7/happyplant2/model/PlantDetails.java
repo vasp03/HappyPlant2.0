@@ -8,38 +8,37 @@ import java.io.Serializable;
  * Updated by:
  **/
 public class PlantDetails implements Serializable {
-
+    private int id;
+    private String common_name;
+    private String scientific_name;
     private String genus;
-    private String scientificName;
-    private int light;
-    private int waterFrequency;
-    private String family;
+    private String imageUrl;
 
-    public PlantDetails(String genus, String scientificName, int light, int waterFrequency, String family) {
-        this.scientificName = scientificName;
+    public PlantDetails(int id, String common_name, String scientific_name, String genus, String imageUrl) {
+        this.id = id;
+        this.common_name = common_name;
+        this.scientific_name = scientific_name;
         this.genus = genus;
-        this.light = light;
-        this.waterFrequency = waterFrequency;
-        this.family = family;
+        this.imageUrl = imageUrl;
     }
 
-    public String getScientificName() {
-        return scientificName;
+    public int getId() {
+        return id;
+    }
+
+    public String getCommon_name() {
+        return common_name;
+    }
+
+    public String getScientific_name() {
+        return scientific_name;
     }
 
     public String getGenus() {
         return genus;
     }
 
-    public int getLight() {
-        return light;
-    }
-
-    public int getWaterFrequency() {
-        return waterFrequency;
-    }
-
-    public String getFamily() {
-        return family;
+    public String getImageUrl() {
+        return imageUrl;
     }
 }
