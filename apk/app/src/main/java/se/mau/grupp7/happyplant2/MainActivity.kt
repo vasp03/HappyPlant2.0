@@ -11,17 +11,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -33,7 +31,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.filled.Yard
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -47,7 +44,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
@@ -70,6 +66,9 @@ import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import android.content.Context
 import android.widget.Toast
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.TextField
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
@@ -79,6 +78,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import se.mau.grupp7.happyplant2.controller.BackendConnector
 import se.mau.grupp7.happyplant2.controller.PlantTypeController
 import se.mau.grupp7.happyplant2.model.FlowerTypes
+import se.mau.grupp7.happyplant2.model.PerenualFlowerInterface
 import se.mau.grupp7.happyplant2.model.PlantDetails
 import se.mau.grupp7.happyplant2.view.theme.HappyPlant2Theme
 
@@ -119,10 +119,10 @@ fun MainScreen() {
             composable("search") {
                 PlantDiscoverScreen(
                     plantTypes = plantList,
-                    getAllPlants = {
-                        getFlowerTypes(ctx) { fetched ->
+                    onSearch = { query ->
+                        getFlowerTypes(ctx, { fetched ->
                             plantList = fetched
-                        }
+                        }, query)
                     }
                 )
             }
@@ -132,18 +132,18 @@ fun MainScreen() {
     }
 }
 
-fun getFlowerTypes(context: Context, onResult: (List<PlantDetails>) -> Unit){
+fun getFlowerTypes(context: Context, onResult: (List<PlantDetails>) -> Unit, search : String = ""){
     val retrofit = Retrofit.Builder()
         .baseUrl("http://10.0.2.2:5000/api/v1/")
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
-    val api = retrofit.create(se.mau.grupp7.happyplant2.model.PerenualFlowerInterface::class.java)
+    val api = retrofit.create(PerenualFlowerInterface::class.java)
 
     if (context is ComponentActivity) {
         context.lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val res: Array<FlowerTypes> = api.getFlowerTypes()
+                val res: Array<FlowerTypes> = api.getFlowerTypes(q = search)
 
                 val mapped = res.map { ft ->
                     PlantDetails(
@@ -345,34 +345,38 @@ fun BonsaiScreen() {
 }
 
 /**
- * Screen With The Users Plants
+ * Screen for discovering plants
  */
 @Composable
-fun PlantDiscoverScreen(plantTypes: List<PlantDetails>, getAllPlants: () -> Unit) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            // add bottom padding so the grid's content isn't obscured by the button
-            contentPadding = PaddingValues(start = 8.dp, top = 8.dp, end = 8.dp, bottom = 96.dp),
-            modifier = Modifier.fillMaxSize()
-        ) {
-            items(plantTypes) { plantType ->
-                PlantCard(plantType)
-            }
-        }
+fun PlantDiscoverScreen(plantTypes: List<PlantDetails>, onSearch: (String) -> Unit) {
 
-        Button(
-            onClick = getAllPlants,
+    Box(){
+        Column(
             modifier = Modifier
-                .align(Alignment.BottomCenter)
+                .fillMaxSize()
                 .padding(16.dp)
-                .fillMaxWidth(0.9f)
-
         ) {
-            Text(text = "Get All Plants")
+            Row() {
+                SearchScreen(onSearch)
+            }
+
+            Row() {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    // add bottom padding so the grid's content isn't obscured by the button
+                    contentPadding = PaddingValues(start = 8.dp, top = 8.dp, end = 8.dp, bottom = 96.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(plantTypes) { plantType ->
+                        PlantCard(plantType)
+                    }
+                }
+            }
         }
     }
 }
+
+
 
 @Composable
 fun PlantCard(userPlant: PlantDetails) {
@@ -404,26 +408,29 @@ fun PlantCard(userPlant: PlantDetails) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchScreen() {
+fun SearchScreen(onSearch: (String) -> Unit) {
+    var text by remember { mutableStateOf("") }
+
     Box(
         modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFa295e8))
+            .fillMaxWidth()
             .padding(16.dp),
         contentAlignment = Alignment.TopCenter
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color.White, shape = CircleShape)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(Icons.Filled.Search, contentDescription = "Search Icon")
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Search...", color = Color.Gray)
-        }
+        TextField(
+            value = text,
+            onValueChange = { text = it },
+            placeholder = { Text("Search") },
+            modifier = Modifier.fillMaxWidth(),
+            trailingIcon = {
+                IconButton(onClick = { onSearch(text) }) {
+                    Icon(Icons.Filled.Search, contentDescription = "Search Icon")
+                }
+            },
+            shape = RoundedCornerShape(8.dp),
+        )
     }
 }
 
