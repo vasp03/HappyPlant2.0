@@ -128,8 +128,7 @@ fun MainScreen() {
                 )
             }
             composable("plantList") {
-                UserPlantListScreen(userPlantList
-                ) { plant ->
+                UserPlantListScreen(userPlantList) { plant ->
                     userPlantList = userPlantList.minus(plant)
                 }
             }
@@ -139,7 +138,7 @@ fun MainScreen() {
 }
 
 @Composable
-fun UserPlantListScreen(userPlantList: List<Plant>, onAdd: (plant : Plant) -> Unit) {
+fun UserPlantListScreen(userPlantList: List<Plant>, onRemove: (plant : Plant) -> Unit) {
     Box(){
         Column(
             modifier = Modifier
@@ -153,7 +152,7 @@ fun UserPlantListScreen(userPlantList: List<Plant>, onAdd: (plant : Plant) -> Un
                     modifier = Modifier.fillMaxSize()
                 ) {
                     for (plant in userPlantList) {
-                        item { PlantCard(plant, onAdd) }
+                        item { UserPlantCard(plant, onRemove) }
                     }
                 }
             }
@@ -408,8 +407,6 @@ fun PlantDiscoverScreen(plantTypes: List<Plant>, onSearch: (String) -> Unit, onA
     }
 }
 
-
-
 @Composable
 fun PlantCard(userPlant: Plant, onAdd: (plant : Plant) -> Unit) {
     var plant = userPlant
@@ -444,6 +441,45 @@ fun PlantCard(userPlant: Plant, onAdd: (plant : Plant) -> Unit) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Add Plant")
+            }
+        }
+    }
+}
+
+@Composable
+fun UserPlantCard(userPlant: Plant, onRemove: (plant : Plant) -> Unit) {
+    var plant = userPlant
+
+    Card(modifier = Modifier.padding(8.dp)) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            // Thumbnail image
+            AsyncImage(
+                model = userPlant.imageURL,
+                contentDescription = userPlant.common_name,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(140.dp),
+                contentScale = ContentScale.Crop
+            )
+
+            // Name and description
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                contentAlignment = Alignment.TopStart
+            ) {
+                Column {
+                    Text(text = userPlant.common_name)
+                    Text(text = userPlant.scientific_name)
+                }
+            }
+
+            Button(
+                onClick = { onRemove(plant) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Remove Plant")
             }
         }
     }

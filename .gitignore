@@ -226,3 +226,6 @@ local.properties
 /apk/.idea
 /server/.vscode
 *.env
+/apk/.kotlin/sessions
+server/cache.db-journal
+/apk/build
