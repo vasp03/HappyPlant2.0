@@ -65,6 +65,7 @@ import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import android.content.Context
 import android.widget.Toast
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TextField
 import androidx.compose.ui.Alignment
@@ -101,6 +102,7 @@ fun MainScreen() {
     val initialPlantList = emptyList<Plant>()
     var plantList by remember { mutableStateOf(initialPlantList) }
     val ctx = LocalContext.current
+    var userPlantList by remember { mutableStateOf(initialPlantList) }
 
     Scaffold(
         bottomBar = { BottomNavigationBar(navController) },
@@ -119,11 +121,42 @@ fun MainScreen() {
                         getFlowerTypes(ctx, { fetched ->
                             plantList = fetched
                         }, query)
+                    },
+                    onAdd = { plant ->
+                        userPlantList = userPlantList.plus(plant)
                     }
                 )
             }
-            composable("plantList") { Text("Hello") }
+            composable("plantList") {
+                UserPlantListScreen(userPlantList
+                ) { plant ->
+                    userPlantList = userPlantList.minus(plant)
+                }
+            }
             composable("addPlant") { AddNewPlantScreen() }
+        }
+    }
+}
+
+@Composable
+fun UserPlantListScreen(userPlantList: List<Plant>, onAdd: (plant : Plant) -> Unit) {
+    Box(){
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            Row() {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    contentPadding = PaddingValues(start = 8.dp, top = 8.dp, end = 8.dp, bottom = 96.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    for (plant in userPlantList) {
+                        item { PlantCard(plant, onAdd) }
+                    }
+                }
+            }
         }
     }
 }
@@ -349,7 +382,7 @@ fun BonsaiScreen() {
  * Screen for discovering plants
  */
 @Composable
-fun PlantDiscoverScreen(plantTypes: List<Plant>, onSearch: (String) -> Unit) {
+fun PlantDiscoverScreen(plantTypes: List<Plant>, onSearch: (String) -> Unit, onAdd: (plant : Plant) -> Unit) {
     Box(){
         Column(
             modifier = Modifier
@@ -367,7 +400,7 @@ fun PlantDiscoverScreen(plantTypes: List<Plant>, onSearch: (String) -> Unit) {
                     modifier = Modifier.fillMaxSize()
                 ) {
                     for (plant in plantTypes) {
-                        item { PlantCard(plant) }
+                        item { PlantCard(plant, onAdd) }
                     }
                 }
             }
@@ -378,7 +411,9 @@ fun PlantDiscoverScreen(plantTypes: List<Plant>, onSearch: (String) -> Unit) {
 
 
 @Composable
-fun PlantCard(userPlant: Plant) {
+fun PlantCard(userPlant: Plant, onAdd: (plant : Plant) -> Unit) {
+    var plant = userPlant
+
     Card(modifier = Modifier.padding(8.dp)) {
         Column(modifier = Modifier.fillMaxWidth()) {
             // Thumbnail image
@@ -402,6 +437,13 @@ fun PlantCard(userPlant: Plant) {
                     Text(text = userPlant.common_name)
                     Text(text = userPlant.scientific_name)
                 }
+            }
+
+            Button(
+                onClick = { onAdd(plant) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Add Plant")
             }
         }
     }
