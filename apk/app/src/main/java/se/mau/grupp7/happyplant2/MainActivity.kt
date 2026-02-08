@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -66,6 +65,7 @@ import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import android.content.Context
 import android.widget.Toast
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TextField
 import androidx.compose.ui.Alignment
@@ -76,20 +76,17 @@ import kotlinx.coroutines.withContext
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import se.mau.grupp7.happyplant2.controller.BackendConnector
-import se.mau.grupp7.happyplant2.controller.PlantTypeController
 import se.mau.grupp7.happyplant2.model.FlowerTypes
 import se.mau.grupp7.happyplant2.model.PerenualFlowerInterface
-import se.mau.grupp7.happyplant2.model.PlantDetails
+import se.mau.grupp7.happyplant2.model.Plant
+import se.mau.grupp7.happyplant2.model.WaterAmount
 import se.mau.grupp7.happyplant2.view.theme.HappyPlant2Theme
 
 private var backendConnector: BackendConnector? = null
-private var plantTypeController: PlantTypeController? = null
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        setup()
 
         setContent {
             HappyPlant2Theme {
@@ -102,9 +99,10 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
-    val initialPlantList = emptyList<PlantDetails>()
+    val initialPlantList = emptyList<Plant>()
     var plantList by remember { mutableStateOf(initialPlantList) }
     val ctx = LocalContext.current
+    var userPlantList by remember { mutableStateOf(initialPlantList) }
 
     Scaffold(
         bottomBar = { BottomNavigationBar(navController) },
@@ -123,16 +121,46 @@ fun MainScreen() {
                         getFlowerTypes(ctx, { fetched ->
                             plantList = fetched
                         }, query)
+                    },
+                    onAdd = { plant ->
+                        userPlantList = userPlantList.plus(plant)
                     }
                 )
             }
-            composable("plantList") { Text("Hello") }
+            composable("plantList") {
+                UserPlantListScreen(userPlantList) { plant ->
+                    userPlantList = userPlantList.minus(plant)
+                }
+            }
             composable("addPlant") { AddNewPlantScreen() }
         }
     }
 }
 
-fun getFlowerTypes(context: Context, onResult: (List<PlantDetails>) -> Unit, search : String = ""){
+@Composable
+fun UserPlantListScreen(userPlantList: List<Plant>, onRemove: (plant : Plant) -> Unit) {
+    Box(){
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            Row() {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    contentPadding = PaddingValues(start = 8.dp, top = 8.dp, end = 8.dp, bottom = 96.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    for (plant in userPlantList) {
+                        item { UserPlantCard(plant, onRemove) }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fun getFlowerTypes(context: Context, onResult: (List<Plant>) -> Unit, search : String = ""){
     val retrofit = Retrofit.Builder()
         .baseUrl("http://10.0.2.2:5000/api/v1/")
         .addConverterFactory(GsonConverterFactory.create())
@@ -146,12 +174,17 @@ fun getFlowerTypes(context: Context, onResult: (List<PlantDetails>) -> Unit, sea
                 val res: Array<FlowerTypes> = api.getFlowerTypes(q = search)
 
                 val mapped = res.map { ft ->
-                    PlantDetails(
+                    Plant(
                         ft.id,
                         ft.common_name,
                         ft.scientific_name.joinToString(", "),
                         ft.genus,
-                        ft.regular_url,
+                        ft.family,
+                        "",
+                        ft.thumbnail,
+                        WaterAmount.OFTEN,
+                        Date(),
+                        0
                     )
                 }
 
@@ -348,8 +381,7 @@ fun BonsaiScreen() {
  * Screen for discovering plants
  */
 @Composable
-fun PlantDiscoverScreen(plantTypes: List<PlantDetails>, onSearch: (String) -> Unit) {
-
+fun PlantDiscoverScreen(plantTypes: List<Plant>, onSearch: (String) -> Unit, onAdd: (plant : Plant) -> Unit) {
     Box(){
         Column(
             modifier = Modifier
@@ -363,12 +395,11 @@ fun PlantDiscoverScreen(plantTypes: List<PlantDetails>, onSearch: (String) -> Un
             Row() {
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
-                    // add bottom padding so the grid's content isn't obscured by the button
                     contentPadding = PaddingValues(start = 8.dp, top = 8.dp, end = 8.dp, bottom = 96.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    items(plantTypes) { plantType ->
-                        PlantCard(plantType)
+                    for (plant in plantTypes) {
+                        item { PlantCard(plant, onAdd) }
                     }
                 }
             }
@@ -376,15 +407,15 @@ fun PlantDiscoverScreen(plantTypes: List<PlantDetails>, onSearch: (String) -> Un
     }
 }
 
-
-
 @Composable
-fun PlantCard(userPlant: PlantDetails) {
+fun PlantCard(userPlant: Plant, onAdd: (plant : Plant) -> Unit) {
+    var plant = userPlant
+
     Card(modifier = Modifier.padding(8.dp)) {
         Column(modifier = Modifier.fillMaxWidth()) {
             // Thumbnail image
             AsyncImage(
-                model = userPlant.imageUrl,
+                model = userPlant.imageURL,
                 contentDescription = userPlant.common_name,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -403,6 +434,52 @@ fun PlantCard(userPlant: PlantDetails) {
                     Text(text = userPlant.common_name)
                     Text(text = userPlant.scientific_name)
                 }
+            }
+
+            Button(
+                onClick = { onAdd(plant) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Add Plant")
+            }
+        }
+    }
+}
+
+@Composable
+fun UserPlantCard(userPlant: Plant, onRemove: (plant : Plant) -> Unit) {
+    var plant = userPlant
+
+    Card(modifier = Modifier.padding(8.dp)) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            // Thumbnail image
+            AsyncImage(
+                model = userPlant.imageURL,
+                contentDescription = userPlant.common_name,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(140.dp),
+                contentScale = ContentScale.Crop
+            )
+
+            // Name and description
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                contentAlignment = Alignment.TopStart
+            ) {
+                Column {
+                    Text(text = userPlant.common_name)
+                    Text(text = userPlant.scientific_name)
+                }
+            }
+
+            Button(
+                onClick = { onRemove(plant) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Remove Plant")
             }
         }
     }
@@ -440,19 +517,4 @@ fun DefaultPreview() {
     HappyPlant2Theme {
         MainScreen()
     }
-}
-
-
-fun setup() {
-    // Setup is run here.
-    // Java classes that connects to backend server is initialize here.
-    backendConnector = BackendConnector()
-
-    // Throwing NullPointerException here if setup won't work.
-    if (backendConnector == null) {
-        throw NullPointerException()
-    }
-
-    backendConnector?.setup()
-    plantTypeController = PlantTypeController(backendConnector)
 }
