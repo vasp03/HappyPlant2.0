@@ -1,10 +1,11 @@
 package se.mau.grupp7.happyplant2.model
 
 import retrofit2.http.GET
+import retrofit2.http.Query
 
 interface PerenualFlowerInterface {
-    @GET("getFlowerTypes?q=rose")
-    suspend fun getFlowerTypes(): Array<FlowerTypes>
+    @GET("getFlowerTypes")
+    suspend fun getFlowerTypes(@Query("q") q: String): Array<FlowerTypes>
 }
 
 data class FlowerTypes(
