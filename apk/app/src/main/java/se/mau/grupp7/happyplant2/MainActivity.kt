@@ -188,7 +188,7 @@ fun UserPlantListScreen(
     onAdd: (plant: UserPlant) -> Unit,
     navController: NavHostController
 ) {
-    var sortOption by remember { mutableStateOf<SortOption>(SortOption.CommonNameAZ) }
+    var sortOption by remember { mutableStateOf(SortOption.CommonNameAZ) }
 
     Column(
         modifier = Modifier
@@ -331,7 +331,15 @@ fun getFlowerTypes(context: Context, onResult: (List<Plant>) -> Unit, search: St
                         "",
                         ft.thumbnail,
                         WaterAmount.OFTEN,
-                        0
+                        LocalDateTime.now(),
+                        7,
+                        "",
+                        0,
+                        "",
+                        "",
+                        "",
+                        "",
+                        ""
                     )
                 }
 
@@ -400,7 +408,9 @@ fun CalendarView(modifier: Modifier = Modifier) {
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(dates) { date ->
-            DayItem(date = date, needsWatering = (date.date % 3 == 0)) // Testdata för vattning
+            val cal = Calendar.getInstance()
+            cal.time = date
+            DayItem(date = date, needsWatering = (cal.get(Calendar.DAY_OF_MONTH) % 3 == 0)) // Testdata för vattning
         }
     }
 }
@@ -538,7 +548,7 @@ fun PlantDiscoverScreen(
     onSearch: (String) -> Unit,
     onAdd: (plant: Plant) -> Unit
 ) {
-    var sortOption by remember { mutableStateOf<SortOption>(SortOption.CommonNameAZ) }
+    var sortOption by remember { mutableStateOf(SortOption.CommonNameAZ) }
 
     Box {
         Column(
@@ -558,7 +568,7 @@ fun PlantDiscoverScreen(
                 else -> plantTypes.sortedBy { it.common_name }
             }
 
-            Row() {
+            Row {
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
                     contentPadding = PaddingValues(
@@ -681,7 +691,7 @@ fun PlantDetailsScreen(
     onWater: (UserPlant) -> Unit,
     onCategoryChange: (UserPlant, String) -> Unit
 ) {
-    var lastWateredTime by remember(plant.lastWatered) { mutableStateOf(plant.getLastWateredString()) }
+    var lastWateredTime by remember(plant.lastWatered) { mutableStateOf(plant.lastWatered.toString()) }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -699,7 +709,7 @@ fun PlantDetailsScreen(
         Text(text = plant.common_name, style = MaterialTheme.typography.headlineMedium, color = Color.White)
         Text(text = plant.scientific_name, style = MaterialTheme.typography.titleMedium, color = Color.White)
         Text(
-            text = "Category: ${plant.getCategory().ifEmpty { "Unassigned" }}",
+            text = "Category: ${plant.category.ifEmpty { "Unassigned" }}",
             color = Color.White,
             style = MaterialTheme.typography.bodyLarge
         )
@@ -708,7 +718,7 @@ fun PlantDetailsScreen(
 
         var expanded by remember { mutableStateOf(false) }
         val categories = listOf("Living Room", "Kitchen", "Bedroom", "Unassigned")
-        var selectedCategory by remember { mutableStateOf(plant.getCategory().ifEmpty { "Unassigned" }) }
+        var selectedCategory by remember { mutableStateOf(plant.category.ifEmpty { "Unassigned" }) }
 
         ExposedDropdownMenuBox(
             expanded = expanded,
@@ -744,7 +754,7 @@ fun PlantDetailsScreen(
         Button(
             onClick = {
                 onWater(plant)
-                lastWateredTime = plant.getLastWateredString()
+                lastWateredTime = plant.lastWatered.toString()
             },
             modifier = Modifier.fillMaxWidth()
         ) {
