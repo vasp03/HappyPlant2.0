@@ -220,6 +220,7 @@ UsabilityTestProgram.class
 /resources/searchHistory.txt
 
 /.idea
+/server/.idea
 local.properties
 /.gradle
 /apk/.gradle
