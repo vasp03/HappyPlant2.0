@@ -147,7 +147,7 @@ public class Plant {
     }
 
     public void setCategory(String category) {
-        this.category = category;
+        this.category = (category != null) ? category : "";
     }
 
     public Plant water() {
