@@ -1,18 +1,22 @@
 package se.mau.grupp7.happyplant2.model;
 
-import java.util.Date;
+import android.graphics.Color;
+
+import java.time.LocalDateTime;
 
 public class Plant {
-    private int id;
-    private String common_name;
-    private String scientific_name;
-    private String genus;
-    private String family;
+    private final int id;
+    private final String common_name;
+    private final String scientific_name;
+    private final String genus;
+    private final String family;
     private final String description;
     private final String imageURL;
     private final WaterAmount wateringAmount;
-    private Date lastWatered;
+    private LocalDateTime lastWatered;
     private final int wateringInterval;
+    private final LocalDateTime dateAdded;
+    private final String category;
 
     public Plant(
             int id,
@@ -23,8 +27,9 @@ public class Plant {
             String description,
             String imageURL,
             WaterAmount wateringAmount,
-            Date lastWatered,
-            int wateringInterval
+            LocalDateTime lastWatered,
+            int wateringInterval,
+            String category
     ) {
         this.id = id;
         this.common_name = common_name;
@@ -36,6 +41,8 @@ public class Plant {
         this.wateringAmount = wateringAmount;
         this.lastWatered = lastWatered;
         this.wateringInterval = wateringInterval;
+        this.dateAdded = LocalDateTime.now();
+        this.category = category;
     }
 
     public int getId() {
@@ -72,7 +79,23 @@ public class Plant {
         return wateringAmount;
     }
 
-    public Date getLastWatered() {
+    public String getLastWatered() {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(lastWatered.getYear());
+        sb.append("-");
+        sb.append(lastWatered.getMonthValue());
+        sb.append("-");
+        sb.append(lastWatered.getDayOfMonth());
+        sb.append(" ");
+        sb.append(lastWatered.getHour());
+        sb.append(":");
+        sb.append(lastWatered.getMinute() < 10 ? "0" + lastWatered.getMinute() : lastWatered.getMinute());
+
+        return sb.toString();
+    }
+
+    public LocalDateTime getLastWateredDateTime() {
         return lastWatered;
     }
 
@@ -80,8 +103,20 @@ public class Plant {
         return wateringInterval;
     }
 
-    public Plant setLastWatered(Date lastWatered) {
-        this.lastWatered = lastWatered;
+    public LocalDateTime getDateAdded() { return dateAdded; }
+
+    public Plant water() {
+        this.lastWatered = LocalDateTime.now();
         return this;
+    }
+
+    public int getColor() {
+        LocalDateTime now = LocalDateTime.now();
+
+        if (now.minusDays(wateringInterval).isBefore(lastWatered)) {
+            return Color.RED;
+        } else {
+            return Color.GREEN;
+        }
     }
 }

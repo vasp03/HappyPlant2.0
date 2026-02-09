@@ -66,7 +66,10 @@ import kotlinx.coroutines.Dispatchers
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.TextField
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
@@ -79,8 +82,10 @@ import se.mau.grupp7.happyplant2.controller.BackendConnector
 import se.mau.grupp7.happyplant2.model.FlowerTypes
 import se.mau.grupp7.happyplant2.model.PerenualFlowerInterface
 import se.mau.grupp7.happyplant2.model.Plant
+import se.mau.grupp7.happyplant2.model.SortOption
 import se.mau.grupp7.happyplant2.model.WaterAmount
 import se.mau.grupp7.happyplant2.view.theme.HappyPlant2Theme
+import java.time.LocalDateTime
 
 private var backendConnector: BackendConnector? = null
 
@@ -128,9 +133,15 @@ fun MainScreen() {
                 )
             }
             composable("plantList") {
-                UserPlantListScreen(userPlantList) { plant ->
-                    userPlantList = userPlantList.minus(plant)
-                }
+                UserPlantListScreen(
+                    userPlantList,
+                    onRemove = { plant ->
+                        userPlantList = userPlantList.minus(plant)
+                    },
+                    onAdd = { plant ->
+                        userPlantList = userPlantList.plus(plant)
+                    }
+                )
             }
             composable("addPlant") { AddNewPlantScreen() }
         }
@@ -138,21 +149,35 @@ fun MainScreen() {
 }
 
 @Composable
-fun UserPlantListScreen(userPlantList: List<Plant>, onRemove: (plant : Plant) -> Unit) {
+fun UserPlantListScreen(userPlantList: List<Plant>, onRemove: (plant : Plant) -> Unit, onAdd: (plant : Plant) -> Unit) {
+    var sortOption by remember { mutableStateOf<SortOption>(SortOption.CommonNameAZ) }
+
     Box(){
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
+            SortDropdown(
+                sortOption = sortOption,
+                onSortOptionSelected = { sortOption = it }
+            )
             Row() {
+                val sortedList = when (sortOption) {
+                    SortOption.CommonNameAZ -> userPlantList.sortedBy { it.common_name }
+                    SortOption.CommonNameZA -> userPlantList.sortedByDescending { it.common_name }
+                    SortOption.DateAddedNewest -> userPlantList.sortedByDescending { it.dateAdded }
+                    SortOption.DateAddedOldest -> userPlantList.sortedBy { it.dateAdded }
+                    SortOption.NeedOfWaterMost -> userPlantList.sortedBy { it.lastWateredDateTime }
+                    SortOption.NeedOfWaterLeast -> userPlantList.sortedByDescending { it.lastWateredDateTime }
+                }
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
                     contentPadding = PaddingValues(start = 8.dp, top = 8.dp, end = 8.dp, bottom = 96.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    for (plant in userPlantList) {
-                        item { UserPlantCard(plant, onRemove) }
+                    for (plant in sortedList) {
+                        item { UserPlantCard(plant, onRemove, Color(plant.getColor().toLong())) }
                     }
                 }
             }
@@ -183,8 +208,9 @@ fun getFlowerTypes(context: Context, onResult: (List<Plant>) -> Unit, search : S
                         "",
                         ft.thumbnail,
                         WaterAmount.OFTEN,
-                        Date(),
-                        0
+                        LocalDateTime.now(),
+                        0,
+                        "TODO"
                     )
                 }
 
@@ -280,7 +306,9 @@ fun DayItem(date: Date, needsWatering: Boolean) {
                     .padding(top = 4.dp)
             )
         } else {
-            Box(modifier = Modifier.size(16.dp).padding(top = 4.dp))
+            Box(modifier = Modifier
+                .size(16.dp)
+                .padding(top = 4.dp))
         }
     }
 }
@@ -382,14 +410,24 @@ fun BonsaiScreen() {
  */
 @Composable
 fun PlantDiscoverScreen(plantTypes: List<Plant>, onSearch: (String) -> Unit, onAdd: (plant : Plant) -> Unit) {
+    var sortOption by remember { mutableStateOf<SortOption>(SortOption.CommonNameAZ) }
+
     Box(){
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            Row() {
-                SearchScreen(onSearch)
+            SearchScreen(onSearch)
+            SortDropdown(
+                sortOption = sortOption,
+                onSortOptionSelected = { sortOption = it }
+            )
+
+            val sortedList = when (sortOption) {
+                SortOption.CommonNameAZ -> plantTypes.sortedBy { it.common_name }
+                SortOption.CommonNameZA -> plantTypes.sortedByDescending { it.common_name }
+                else -> plantTypes.sortedBy { it.common_name }
             }
 
             Row() {
@@ -398,7 +436,7 @@ fun PlantDiscoverScreen(plantTypes: List<Plant>, onSearch: (String) -> Unit, onA
                     contentPadding = PaddingValues(start = 8.dp, top = 8.dp, end = 8.dp, bottom = 96.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    for (plant in plantTypes) {
+                    for (plant in sortedList) {
                         item { PlantCard(plant, onAdd) }
                     }
                 }
@@ -407,10 +445,43 @@ fun PlantDiscoverScreen(plantTypes: List<Plant>, onSearch: (String) -> Unit, onA
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SortDropdown(sortOption: SortOption, onSortOptionSelected: (SortOption) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded }
+    ) {
+        TextField(
+            value = sortOption.displayName,
+            onValueChange = {},
+            readOnly = true,
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier
+                .menuAnchor()
+                .fillMaxWidth()
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+        ) {
+            SortOption.entries.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option.displayName) },
+                    onClick = {
+                        expanded = false
+                        onSortOptionSelected(option)
+                    }
+                )
+            }
+        }
+    }
+}
+
 @Composable
 fun PlantCard(userPlant: Plant, onAdd: (plant : Plant) -> Unit) {
-    var plant = userPlant
-
     Card(modifier = Modifier.padding(8.dp)) {
         Column(modifier = Modifier.fillMaxWidth()) {
             // Thumbnail image
@@ -437,7 +508,7 @@ fun PlantCard(userPlant: Plant, onAdd: (plant : Plant) -> Unit) {
             }
 
             Button(
-                onClick = { onAdd(plant) },
+                onClick = { onAdd(userPlant) },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Add Plant")
@@ -447,11 +518,14 @@ fun PlantCard(userPlant: Plant, onAdd: (plant : Plant) -> Unit) {
 }
 
 @Composable
-fun UserPlantCard(userPlant: Plant, onRemove: (plant : Plant) -> Unit) {
-    var plant = userPlant
-
-    Card(modifier = Modifier.padding(8.dp)) {
-        Column(modifier = Modifier.fillMaxWidth()) {
+fun UserPlantCard(userPlant: Plant, onRemove: (plant : Plant) -> Unit, color : Color) {
+    Card(
+        modifier = Modifier.padding(8.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth()
+                .background(color = color)
+        ) {
             // Thumbnail image
             AsyncImage(
                 model = userPlant.imageURL,
@@ -472,11 +546,21 @@ fun UserPlantCard(userPlant: Plant, onRemove: (plant : Plant) -> Unit) {
                 Column {
                     Text(text = userPlant.common_name)
                     Text(text = userPlant.scientific_name)
+                    Text(text = userPlant.lastWatered)
                 }
             }
 
             Button(
-                onClick = { onRemove(plant) },
+                onClick = {
+                    userPlant.water()
+
+                },
+            ) {
+                Text("Water Plant")
+            }
+
+            Button(
+                onClick = { onRemove(userPlant) },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Remove Plant")
