@@ -13,6 +13,7 @@ public class Plant {
     private final WaterAmount wateringAmount;
     private Date lastWatered;
     private final int wateringInterval;
+    private String room;
 
     public Plant(
             int id,
@@ -24,7 +25,8 @@ public class Plant {
             String imageURL,
             WaterAmount wateringAmount,
             Date lastWatered,
-            int wateringInterval
+            int wateringInterval,
+            String room
     ) {
         this.id = id;
         this.common_name = common_name;
@@ -36,6 +38,7 @@ public class Plant {
         this.wateringAmount = wateringAmount;
         this.lastWatered = lastWatered;
         this.wateringInterval = wateringInterval;
+        this.room = room;
     }
 
     public int getId() {
@@ -59,7 +62,6 @@ public class Plant {
         return family;
     }
 
-
     public String getDescription() {
         return description;
     }
@@ -78,6 +80,15 @@ public class Plant {
 
     public int getWateringInterval() {
         return wateringInterval;
+    }
+
+    public String getRoom() {
+        return room;
+    }
+
+    public Plant setRoom(String room) {
+        this.room = room;
+        return this;
     }
 
     public Plant setLastWatered(Date lastWatered) {

@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -69,6 +70,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TextField
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
@@ -138,21 +140,46 @@ fun MainScreen() {
 }
 
 @Composable
-fun UserPlantListScreen(userPlantList: List<Plant>, onRemove: (plant : Plant) -> Unit) {
-    Box(){
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-        ) {
-            Row() {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    contentPadding = PaddingValues(start = 8.dp, top = 8.dp, end = 8.dp, bottom = 96.dp),
-                    modifier = Modifier.fillMaxSize()
+fun UserPlantListScreen(userPlantList: List<Plant>, onRemove: (plant: Plant) -> Unit) {
+    // This correctly groups your plants by the 'room' property.
+    // Plants with no room assigned will be grouped under "Unassigned".
+    val plantsByRoom = remember(userPlantList) {
+        userPlantList.groupBy { it.room.ifBlank { "Unassigned" } }
+    }
+
+    // We use a LazyColumn to create a scrollable list of room sections.
+    // This is more efficient than a Column for a potentially long list of rooms.
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // We iterate over each room and its list of plants.
+        plantsByRoom.forEach { (room, plantsInRoom) ->
+            item {
+                // Each room is represented by a Column with a title and a grid of plants.
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color.Black.copy(alpha = 0.3f), shape = RoundedCornerShape(12.dp))
+                        .padding(12.dp)
                 ) {
-                    for (plant in userPlantList) {
-                        item { UserPlantCard(plant, onRemove) }
+                    // Title for the room.
+                    Text(
+                        text = room,
+                        color = Color.White,
+                        // style = MaterialTheme.typography.h6, // Consider using theme typography
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+
+                    // A grid for the plants in this room.
+                    // We use LazyVerticalGrid for simplicity and performance.
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(plantsInRoom) { plant ->
+                            UserPlantCircle(plant = plant, onPlantClick = { onRemove(plant) })
+                        }
                     }
                 }
             }
@@ -184,7 +211,8 @@ fun getFlowerTypes(context: Context, onResult: (List<Plant>) -> Unit, search : S
                         ft.thumbnail,
                         WaterAmount.OFTEN,
                         Date(),
-                        0
+                        0,
+                        ""
                     )
                 }
 
@@ -446,42 +474,26 @@ fun PlantCard(userPlant: Plant, onAdd: (plant : Plant) -> Unit) {
     }
 }
 
+/**
+ * A composable that displays a plant's image in a small, clickable circle.
+ * This is used to represent a single plant in the UserPlantListScreen.
+ */
 @Composable
-fun UserPlantCard(userPlant: Plant, onRemove: (plant : Plant) -> Unit) {
-    var plant = userPlant
-
-    Card(modifier = Modifier.padding(8.dp)) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            // Thumbnail image
-            AsyncImage(
-                model = userPlant.imageURL,
-                contentDescription = userPlant.common_name,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(140.dp),
-                contentScale = ContentScale.Crop
-            )
-
-            // Name and description
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp),
-                contentAlignment = Alignment.TopStart
-            ) {
-                Column {
-                    Text(text = userPlant.common_name)
-                    Text(text = userPlant.scientific_name)
-                }
-            }
-
-            Button(
-                onClick = { onRemove(plant) },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Remove Plant")
-            }
-        }
+fun UserPlantCircle(plant: Plant, onPlantClick: () -> Unit) {
+    // The button functionality will be implemented later as requested.
+    IconButton(
+        onClick = onPlantClick,
+        modifier = Modifier.size(80.dp)
+    ) {
+        AsyncImage(
+            model = plant.imageURL, // Using Coil to load the image from the URL.
+            contentDescription = plant.common_name,
+            contentScale = ContentScale.Crop, // Crop the image to fill the circle.
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(CircleShape) // Clip the image to a circle.
+                .background(Color.Gray) // A placeholder color while the image loads.
+        )
     }
 }
 
