@@ -146,6 +146,10 @@ public class Plant {
         return nickName;
     }
 
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
     public Plant water() {
         this.lastWatered = LocalDateTime.now();
         return this;

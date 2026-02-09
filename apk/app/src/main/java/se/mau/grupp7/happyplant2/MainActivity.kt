@@ -29,6 +29,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Forest
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.WaterDrop
@@ -56,6 +58,7 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -160,13 +163,22 @@ fun MainScreen() {
                             userPlantList = userPlantList.minus(it)
                             navController.popBackStack()
                         },
-                        onWater = {
-                            val index = userPlantList.indexOf(it)
-                            if (index != -1) {
-                                val newList = userPlantList.toMutableList()
-                                it.water()
-                                newList[index] = it
-                                userPlantList = newList
+                        onWater = { plantToWater ->
+                            userPlantList = userPlantList.map {
+                                if (it.id == plantToWater.id) {
+                                    it.water()
+                                } else {
+                                    it
+                                }
+                            }
+                        },
+                        onCategoryChange = { plantToUpdate, newCategory ->
+                            userPlantList = userPlantList.map {
+                                if (it.id == plantToUpdate.id) {
+                                    it.apply { setCategory(if (newCategory == "Unassigned") "" else newCategory) }
+                                } else {
+                                    it
+                                }
                             }
                         }
                     )
@@ -206,14 +218,22 @@ fun UserPlantListScreen(
             SortOption.NeedOfWaterLeast -> userPlantList.sortedByDescending { it.lastWateredDateTime }
         }
 
-        val groupedPlants = sortedList.groupBy { it.category.ifEmpty { "Uncategorized" } }
-        var expandedCategories by remember(groupedPlants.keys) { mutableStateOf(groupedPlants.keys) }
+        val unassignedPlants = sortedList.filter { it.category.isNullOrEmpty() }
+        val categorizedPlants = sortedList
+            .filter { it.category.isNotEmpty() }
+            .groupBy { it.category }
+
+        val displayCategories = (categorizedPlants.keys + listOf("Living Room", "Kitchen", "Bedroom")).distinct().sorted()
+
+        var expandedCategories by remember(displayCategories) { mutableStateOf(displayCategories.toSet()) }
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = 96.dp)
         ) {
-            groupedPlants.forEach { (category, plants) ->
+            displayCategories.forEach { category ->
+                val plantsForCategory = categorizedPlants[category] ?: emptyList()
+
                 item {
                     val isExpanded = category in expandedCategories
                     Column(
@@ -222,11 +242,7 @@ fun UserPlantListScreen(
                             .background(Color(0xFF2C2A4A), shape = RoundedCornerShape(8.dp))
                             .padding(8.dp)
                     ) {
-                        Text(
-                            text = category,
-                            color = Color.White,
-                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
-                            style = MaterialTheme.typography.headlineSmall,
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
@@ -236,12 +252,29 @@ fun UserPlantListScreen(
                                         expandedCategories + category
                                     }
                                 }
-                                .padding(8.dp)
-                        )
+                                .padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "$category (${plantsForCategory.size})",
+                                color = Color.White,
+                                fontStyle = FontStyle.Italic,
+                                style = MaterialTheme.typography.headlineSmall,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Icon(
+                                imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                contentDescription = if (isExpanded) "Collapse" else "Expand",
+                                tint = Color.White
+                            )
+                        }
 
                         if (isExpanded) {
-                            val chunkedPlants = plants.chunked(3)
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            val chunkedPlants = plantsForCategory.chunked(3)
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
                                 chunkedPlants.forEach { rowPlants ->
                                     Row(
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -251,6 +284,29 @@ fun UserPlantListScreen(
                                             UserPlantCard(plant, navController)
                                         }
                                     }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (unassignedPlants.isNotEmpty()) {
+                item {
+                    val chunkedPlants = unassignedPlants.chunked(3)
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        chunkedPlants.forEach { rowPlants ->
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.padding(vertical = 4.dp)
+                            ) {
+                                rowPlants.forEach { plant ->
+                                    UserPlantCard(plant, navController)
                                 }
                             }
                         }
@@ -286,9 +342,9 @@ fun getFlowerTypes(context: Context, onResult: (List<Plant>) -> Unit, search: St
                         WaterAmount.OFTEN,
                         LocalDateTime.now(),
                         0,
-                        "Unassigned",
+                        "",
                         -1,
-                        "Living Room",
+                        "TODO",
                         "TODO",
                         "TODO",
                         "TODO",
@@ -620,7 +676,7 @@ fun UserPlantCard(userPlant: Plant, navController: NavHostController) {
     IconButton(
         onClick = { navController.navigate("plantDetails/${userPlant.id}") },
         modifier = Modifier
-            .size(100.dp)
+            .size(90.dp)
             .padding(8.dp)
     ) {
         AsyncImage(
@@ -634,8 +690,15 @@ fun UserPlantCard(userPlant: Plant, navController: NavHostController) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PlantDetailsScreen(plant: Plant, onRemove: (Plant) -> Unit, onWater: (Plant) -> Unit) {
+fun PlantDetailsScreen(
+    plant: Plant,
+    onRemove: (Plant) -> Unit,
+    onWater: (Plant) -> Unit,
+    onCategoryChange: (Plant, String) -> Unit
+) {
+    var lastWateredTime by remember { mutableStateOf(plant.lastWatered) }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -652,10 +715,54 @@ fun PlantDetailsScreen(plant: Plant, onRemove: (Plant) -> Unit, onWater: (Plant)
         Spacer(modifier = Modifier.height(16.dp))
         Text(text = plant.common_name, style = MaterialTheme.typography.headlineMedium, color = Color.White)
         Text(text = plant.scientific_name, style = MaterialTheme.typography.titleMedium, color = Color.White)
-        Text(text = "Last watered: ${plant.lastWatered}", style = MaterialTheme.typography.bodyLarge, color = Color.White)
+        Text(
+            text = "Category: ${plant.getCategory().ifEmpty { "Unassigned" }}",
+            color = Color.White,
+            style = MaterialTheme.typography.bodyLarge
+        )
+        Text(text = "Last watered: $lastWateredTime", style = MaterialTheme.typography.bodyLarge, color = Color.White)
+        Spacer(modifier = Modifier.height(16.dp))
+
+        var expanded by remember { mutableStateOf(false) }
+        val categories = listOf("Living Room", "Kitchen", "Bedroom", "Unassigned")
+        var selectedCategory by remember { mutableStateOf(plant.getCategory().ifEmpty { "Unassigned" }) }
+
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = !expanded }
+        ) {
+            TextField(
+                value = selectedCategory,
+                onValueChange = {},
+                readOnly = true,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                modifier = Modifier
+                    .menuAnchor()
+                    .fillMaxWidth()
+            )
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+            ) {
+                categories.forEach { category ->
+                    DropdownMenuItem(
+                        text = { Text(category) },
+                        onClick = {
+                            selectedCategory = category
+                            expanded = false
+                            onCategoryChange(plant, category)
+                        }
+                    )
+                }
+            }
+        }
+
         Spacer(modifier = Modifier.height(16.dp))
         Button(
-            onClick = { onWater(plant) },
+            onClick = {
+                onWater(plant)
+                lastWateredTime = plant.lastWatered
+            },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Water Plant")
