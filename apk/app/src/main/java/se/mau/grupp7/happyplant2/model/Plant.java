@@ -1,18 +1,28 @@
 package se.mau.grupp7.happyplant2.model;
 
-import java.util.Date;
+import android.graphics.Color;
+
+import java.time.LocalDateTime;
 
 public class Plant {
-    private int id;
-    private String common_name;
-    private String scientific_name;
-    private String genus;
-    private String family;
+    private final int id;
+    private final String common_name;
+    private final String scientific_name;
+    private final String genus;
+    private final String family;
     private final String description;
     private final String imageURL;
     private final WaterAmount wateringAmount;
-    private Date lastWatered;
+    private LocalDateTime lastWatered;
     private final int wateringInterval;
+    private final LocalDateTime dateAdded;
+    private String category;
+    private int plantLength;
+    private String comment;
+    private String pictureUrl;
+    private String plantPot;
+    private String extraFacts;
+    private String nickName;
 
     public Plant(
             int id,
@@ -23,8 +33,15 @@ public class Plant {
             String description,
             String imageURL,
             WaterAmount wateringAmount,
-            Date lastWatered,
-            int wateringInterval
+            LocalDateTime lastWatered,
+            int wateringInterval,
+            String category,
+            int plantLength,
+            String comment,
+            String pictureUrl,
+            String plantPot,
+            String extraFacts,
+            String nickName
     ) {
         this.id = id;
         this.common_name = common_name;
@@ -36,6 +53,14 @@ public class Plant {
         this.wateringAmount = wateringAmount;
         this.lastWatered = lastWatered;
         this.wateringInterval = wateringInterval;
+        this.dateAdded = LocalDateTime.now();
+        this.category = category;
+        this.plantLength = plantLength;
+        this.comment = comment;
+        this.pictureUrl = pictureUrl;
+        this.plantPot = plantPot;
+        this.extraFacts = extraFacts;
+        this.nickName = nickName;
     }
 
     public int getId() {
@@ -59,7 +84,6 @@ public class Plant {
         return family;
     }
 
-
     public String getDescription() {
         return description;
     }
@@ -72,7 +96,16 @@ public class Plant {
         return wateringAmount;
     }
 
-    public Date getLastWatered() {
+    public String getLastWatered() {
+
+        return lastWatered.getYear() + "-" +
+                lastWatered.getMonthValue() + "-" +
+                lastWatered.getDayOfMonth() + " " +
+                lastWatered.getHour() + ":" +
+                (lastWatered.getMinute() < 10 ? "0" + lastWatered.getMinute() : lastWatered.getMinute());
+    }
+
+    public LocalDateTime getLastWateredDateTime() {
         return lastWatered;
     }
 
@@ -80,8 +113,55 @@ public class Plant {
         return wateringInterval;
     }
 
-    public Plant setLastWatered(Date lastWatered) {
-        this.lastWatered = lastWatered;
+    public LocalDateTime getDateAdded() { return dateAdded; }
+
+    public String getCategory() {
+        return category;
+    }
+
+    /**
+     * Get the length of the plant in mm
+     */
+    public int getPlantLength() {
+        return plantLength;
+    }
+
+    public String getComment() {
+        return comment;
+    }
+
+    public String getPictureUrl() {
+        return pictureUrl;
+    }
+
+    public String getPlantPot() {
+        return plantPot;
+    }
+
+    public String getExtraFacts() {
+        return extraFacts;
+    }
+
+    public String getNickName() {
+        return nickName;
+    }
+
+    public void setCategory(String category) {
+        this.category = (category != null) ? category : "";
+    }
+
+    public Plant water() {
+        this.lastWatered = LocalDateTime.now();
         return this;
+    }
+
+    public int getWaterStatus() {
+        LocalDateTime now = LocalDateTime.now();
+
+        if (now.minusDays(wateringInterval).isBefore(lastWatered)) {
+            return Color.RED;
+        } else {
+            return Color.GREEN;
+        }
     }
 }
