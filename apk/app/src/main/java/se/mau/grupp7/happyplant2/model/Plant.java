@@ -84,7 +84,6 @@ public class Plant {
         return family;
     }
 
-
     public String getDescription() {
         return description;
     }
@@ -145,6 +144,10 @@ public class Plant {
 
     public String getNickName() {
         return nickName;
+    }
+
+    public void setCategory(String category) {
+        this.category = (category != null) ? category : "";
     }
 
     public Plant water() {
