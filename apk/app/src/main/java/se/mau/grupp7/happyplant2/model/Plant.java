@@ -75,4 +75,55 @@ public class Plant {
         return wateringInterval;
     }
 
+    public LocalDateTime getDateAdded() { return dateAdded; }
+
+    public String getCategory() {
+        return category;
+    }
+
+    /**
+     * Get the length of the plant in mm
+     */
+    public int getPlantLength() {
+        return plantLength;
+    }
+
+    public String getComment() {
+        return comment;
+    }
+
+    public String getPictureUrl() {
+        return pictureUrl;
+    }
+
+    public String getPlantPot() {
+        return plantPot;
+    }
+
+    public String getExtraFacts() {
+        return extraFacts;
+    }
+
+    public String getNickName() {
+        return nickName;
+    }
+
+    public void setCategory(String category) {
+        this.category = (category != null) ? category : "";
+    }
+
+    public Plant water() {
+        this.lastWatered = LocalDateTime.now();
+        return this;
+    }
+
+    public int getWaterStatus() {
+        LocalDateTime now = LocalDateTime.now();
+
+        if (now.minusDays(wateringInterval).isBefore(lastWatered)) {
+            return Color.RED;
+        } else {
+            return Color.GREEN;
+        }
+    }
 }
