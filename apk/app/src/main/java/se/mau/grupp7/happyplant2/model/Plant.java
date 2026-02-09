@@ -13,8 +13,16 @@ public class Plant {
     private final String description;
     private final String imageURL;
     private final WaterAmount wateringAmount;
+    private LocalDateTime lastWatered;
     private final int wateringInterval;
-
+    private final LocalDateTime dateAdded;
+    private String category;
+    private int plantLength;
+    private String comment;
+    private String pictureUrl;
+    private String plantPot;
+    private String extraFacts;
+    private String nickName;
 
     public Plant(
             int id,
@@ -25,7 +33,15 @@ public class Plant {
             String description,
             String imageURL,
             WaterAmount wateringAmount,
-            int wateringInterval
+            LocalDateTime lastWatered,
+            int wateringInterval,
+            String category,
+            int plantLength,
+            String comment,
+            String pictureUrl,
+            String plantPot,
+            String extraFacts,
+            String nickName
     ) {
         this.id = id;
         this.common_name = common_name;
@@ -35,7 +51,16 @@ public class Plant {
         this.description = description;
         this.imageURL = imageURL;
         this.wateringAmount = wateringAmount;
+        this.lastWatered = lastWatered;
         this.wateringInterval = wateringInterval;
+        this.dateAdded = LocalDateTime.now();
+        this.category = category;
+        this.plantLength = plantLength;
+        this.comment = comment;
+        this.pictureUrl = pictureUrl;
+        this.plantPot = plantPot;
+        this.extraFacts = extraFacts;
+        this.nickName = nickName;
     }
 
     public int getId() {
@@ -69,6 +94,19 @@ public class Plant {
 
     public WaterAmount getWateringAmount() {
         return wateringAmount;
+    }
+
+    public String getLastWatered() {
+
+        return lastWatered.getYear() + "-" +
+                lastWatered.getMonthValue() + "-" +
+                lastWatered.getDayOfMonth() + " " +
+                lastWatered.getHour() + ":" +
+                (lastWatered.getMinute() < 10 ? "0" + lastWatered.getMinute() : lastWatered.getMinute());
+    }
+
+    public LocalDateTime getLastWateredDateTime() {
+        return lastWatered;
     }
 
     public int getWateringInterval() {
