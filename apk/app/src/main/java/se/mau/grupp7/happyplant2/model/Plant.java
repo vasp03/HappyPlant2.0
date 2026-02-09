@@ -16,7 +16,13 @@ public class Plant {
     private LocalDateTime lastWatered;
     private final int wateringInterval;
     private final LocalDateTime dateAdded;
-    private final String category;
+    private String category;
+    private int plantLength;
+    private String comment;
+    private String pictureUrl;
+    private String plantPot;
+    private String extraFacts;
+    private String nickName;
 
     public Plant(
             int id,
@@ -29,7 +35,13 @@ public class Plant {
             WaterAmount wateringAmount,
             LocalDateTime lastWatered,
             int wateringInterval,
-            String category
+            String category,
+            int plantLength,
+            String comment,
+            String pictureUrl,
+            String plantPot,
+            String extraFacts,
+            String nickName
     ) {
         this.id = id;
         this.common_name = common_name;
@@ -43,6 +55,12 @@ public class Plant {
         this.wateringInterval = wateringInterval;
         this.dateAdded = LocalDateTime.now();
         this.category = category;
+        this.plantLength = plantLength;
+        this.comment = comment;
+        this.pictureUrl = pictureUrl;
+        this.plantPot = plantPot;
+        this.extraFacts = extraFacts;
+        this.nickName = nickName;
     }
 
     public int getId() {
@@ -80,19 +98,12 @@ public class Plant {
     }
 
     public String getLastWatered() {
-        StringBuilder sb = new StringBuilder();
 
-        sb.append(lastWatered.getYear());
-        sb.append("-");
-        sb.append(lastWatered.getMonthValue());
-        sb.append("-");
-        sb.append(lastWatered.getDayOfMonth());
-        sb.append(" ");
-        sb.append(lastWatered.getHour());
-        sb.append(":");
-        sb.append(lastWatered.getMinute() < 10 ? "0" + lastWatered.getMinute() : lastWatered.getMinute());
-
-        return sb.toString();
+        return lastWatered.getYear() + "-" +
+                lastWatered.getMonthValue() + "-" +
+                lastWatered.getDayOfMonth() + " " +
+                lastWatered.getHour() + ":" +
+                (lastWatered.getMinute() < 10 ? "0" + lastWatered.getMinute() : lastWatered.getMinute());
     }
 
     public LocalDateTime getLastWateredDateTime() {
@@ -105,12 +116,43 @@ public class Plant {
 
     public LocalDateTime getDateAdded() { return dateAdded; }
 
+    public String getCategory() {
+        return category;
+    }
+
+    /**
+     * Get the length of the plant in mm
+     */
+    public int getPlantLength() {
+        return plantLength;
+    }
+
+    public String getComment() {
+        return comment;
+    }
+
+    public String getPictureUrl() {
+        return pictureUrl;
+    }
+
+    public String getPlantPot() {
+        return plantPot;
+    }
+
+    public String getExtraFacts() {
+        return extraFacts;
+    }
+
+    public String getNickName() {
+        return nickName;
+    }
+
     public Plant water() {
         this.lastWatered = LocalDateTime.now();
         return this;
     }
 
-    public int getColor() {
+    public int getWaterStatus() {
         LocalDateTime now = LocalDateTime.now();
 
         if (now.minusDays(wateringInterval).isBefore(lastWatered)) {

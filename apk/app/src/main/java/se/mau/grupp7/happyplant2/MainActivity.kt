@@ -177,7 +177,7 @@ fun UserPlantListScreen(userPlantList: List<Plant>, onRemove: (plant : Plant) ->
                     modifier = Modifier.fillMaxSize()
                 ) {
                     for (plant in sortedList) {
-                        item { UserPlantCard(plant, onRemove, Color(plant.getColor().toLong())) }
+                        item { UserPlantCard(plant, onRemove, Color(plant.waterStatus.toLong())) }
                     }
                 }
             }
@@ -210,6 +210,12 @@ fun getFlowerTypes(context: Context, onResult: (List<Plant>) -> Unit, search : S
                         WaterAmount.OFTEN,
                         LocalDateTime.now(),
                         0,
+                        "TODO",
+                        -1,
+                        "TODO",
+                        "TODO",
+                        "TODO",
+                        "TODO",
                         "TODO"
                     )
                 }
