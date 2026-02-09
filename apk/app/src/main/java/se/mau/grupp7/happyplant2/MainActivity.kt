@@ -90,6 +90,7 @@ import se.mau.grupp7.happyplant2.controller.BackendConnector
 import se.mau.grupp7.happyplant2.model.FlowerTypes
 import se.mau.grupp7.happyplant2.model.PerenualFlowerInterface
 import se.mau.grupp7.happyplant2.model.Plant
+import se.mau.grupp7.happyplant2.model.UserPlant
 import se.mau.grupp7.happyplant2.model.SortOption
 import se.mau.grupp7.happyplant2.model.WaterAmount
 import se.mau.grupp7.happyplant2.view.theme.HappyPlant2Theme
@@ -115,7 +116,7 @@ fun MainScreen() {
     val initialPlantList = emptyList<Plant>()
     var plantList by remember { mutableStateOf(initialPlantList) }
     val ctx = LocalContext.current
-    var userPlantList by remember { mutableStateOf(initialPlantList) }
+    var userPlantList by remember { mutableStateOf(emptyList<UserPlant>()) }
 
     Scaffold(
         bottomBar = { BottomNavigationBar(navController) },
@@ -136,7 +137,7 @@ fun MainScreen() {
                         }, query)
                     },
                     onAdd = { plant ->
-                        userPlantList = userPlantList.plus(plant)
+                        userPlantList = userPlantList.plus(UserPlant(plant))
                     }
                 )
             }
@@ -146,8 +147,8 @@ fun MainScreen() {
                     onRemove = { plant ->
                         userPlantList = userPlantList.minus(plant)
                     },
-                    onAdd = { plant ->
-                        userPlantList = userPlantList.plus(plant)
+                    onAdd = { userPlant ->
+                        userPlantList = userPlantList.plus(userPlant)
                     },
                     navController = navController
                 )
@@ -164,22 +165,12 @@ fun MainScreen() {
                             navController.popBackStack()
                         },
                         onWater = { plantToWater ->
-                            userPlantList = userPlantList.map {
-                                if (it.id == plantToWater.id) {
-                                    it.water()
-                                } else {
-                                    it
-                                }
-                            }
+                            plantToWater.water()
+                            userPlantList = userPlantList.toList()
                         },
                         onCategoryChange = { plantToUpdate, newCategory ->
-                            userPlantList = userPlantList.map {
-                                if (it.id == plantToUpdate.id) {
-                                    it.apply { setCategory(if (newCategory == "Unassigned") "" else newCategory) }
-                                } else {
-                                    it
-                                }
-                            }
+                            plantToUpdate.category = if (newCategory == "Unassigned") "" else newCategory
+                            userPlantList = userPlantList.toList()
                         }
                     )
                 } else {
@@ -192,9 +183,9 @@ fun MainScreen() {
 
 @Composable
 fun UserPlantListScreen(
-    userPlantList: List<Plant>,
-    onRemove: (plant: Plant) -> Unit,
-    onAdd: (plant: Plant) -> Unit,
+    userPlantList: List<UserPlant>,
+    onRemove: (plant: UserPlant) -> Unit,
+    onAdd: (plant: UserPlant) -> Unit,
     navController: NavHostController
 ) {
     var sortOption by remember { mutableStateOf<SortOption>(SortOption.CommonNameAZ) }
@@ -214,8 +205,8 @@ fun UserPlantListScreen(
             SortOption.CommonNameZA -> userPlantList.sortedByDescending { it.common_name }
             SortOption.DateAddedNewest -> userPlantList.sortedByDescending { it.dateAdded }
             SortOption.DateAddedOldest -> userPlantList.sortedBy { it.dateAdded }
-            SortOption.NeedOfWaterMost -> userPlantList.sortedBy { it.lastWateredDateTime }
-            SortOption.NeedOfWaterLeast -> userPlantList.sortedByDescending { it.lastWateredDateTime }
+            SortOption.NeedOfWaterMost -> userPlantList.sortedBy { it.lastWatered }
+            SortOption.NeedOfWaterLeast -> userPlantList.sortedByDescending { it.lastWatered }
         }
 
         val unassignedPlants = sortedList.filter { it.category.isNullOrEmpty() }
@@ -340,15 +331,7 @@ fun getFlowerTypes(context: Context, onResult: (List<Plant>) -> Unit, search: St
                         "",
                         ft.thumbnail,
                         WaterAmount.OFTEN,
-                        LocalDateTime.now(),
-                        0,
-                        "",
-                        -1,
-                        "TODO",
-                        "TODO",
-                        "TODO",
-                        "TODO",
-                        "TODO"
+                        0
                     )
                 }
 
@@ -672,7 +655,7 @@ fun PlantCard(userPlant: Plant, onAdd: (plant: Plant) -> Unit) {
  * This is used to represent a single plant in the UserPlantListScreen.
  */
 @Composable
-fun UserPlantCard(userPlant: Plant, navController: NavHostController) {
+fun UserPlantCard(userPlant: UserPlant, navController: NavHostController) {
     IconButton(
         onClick = { navController.navigate("plantDetails/${userPlant.id}") },
         modifier = Modifier
@@ -693,12 +676,12 @@ fun UserPlantCard(userPlant: Plant, navController: NavHostController) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlantDetailsScreen(
-    plant: Plant,
-    onRemove: (Plant) -> Unit,
-    onWater: (Plant) -> Unit,
-    onCategoryChange: (Plant, String) -> Unit
+    plant: UserPlant,
+    onRemove: (UserPlant) -> Unit,
+    onWater: (UserPlant) -> Unit,
+    onCategoryChange: (UserPlant, String) -> Unit
 ) {
-    var lastWateredTime by remember { mutableStateOf(plant.lastWatered) }
+    var lastWateredTime by remember(plant.lastWatered) { mutableStateOf(plant.getLastWateredString()) }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -761,7 +744,7 @@ fun PlantDetailsScreen(
         Button(
             onClick = {
                 onWater(plant)
-                lastWateredTime = plant.lastWatered
+                lastWateredTime = plant.getLastWateredString()
             },
             modifier = Modifier.fillMaxWidth()
         ) {
