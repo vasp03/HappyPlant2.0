@@ -16,7 +16,7 @@ public class WaterCalculator {
      */
     public static long calculateWaterFrequencyForWatering(int waterFrequency) {
         long waterFrequencyMilli;
-        long week = 604000000L;
+        long week = 7L * 24 * 60 * 60 * 1000;
         if (waterFrequency <= 200) {
             waterFrequencyMilli = week * 4;
         } else if (waterFrequency <= 400) {

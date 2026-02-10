@@ -11,7 +11,7 @@ import se.mau.grupp7.happyplant2.model.WaterCalculator;
 
 public class WaterCalculatorTest {
 
-    private final long WEEK = 604000000L;
+    private final long WEEK = 7L * 24 * 60 * 60 * 1000;
 
     @Test
     public void testCalculateWaterFrequency_Boundary200() {
