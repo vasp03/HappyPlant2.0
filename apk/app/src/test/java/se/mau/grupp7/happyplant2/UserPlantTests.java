@@ -210,7 +210,7 @@ public class UserPlantTests {
     }
 
     /*  --------------------------------------------------------------------------------------------
-        Nedan kommer alla Hjälpmetoder som använts för koden oven!
+        Nedan kommer alla Hjälpmetoder som använts för koden ovan!
 
         Dessa hjälpmetoder används antingen för att de inte är implementerade i kod ännu,
         eller på grund av att det ska se snyggare ut i testerna ovan.
