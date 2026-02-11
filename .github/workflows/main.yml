@@ -25,8 +25,8 @@ jobs:
 
       - name: Verify Gradle Wrapper
         run: |
-          if [ ! -f ./apk/gradlew/gradle-wrapper.jar ]; then
-            echo "Error: gradle-wrapper.jar not found in apk directory!"
+          if [ ! -f ./apk/gradlew ]; then
+            echo "Error: gradlew not found in apk directory!"
             exit 1
           fi
 
