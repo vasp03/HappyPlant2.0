@@ -23,22 +23,19 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
-      - name: Enter apk directory
-        run: cd /apk
-
       - name: Verify Gradle Wrapper
         run: |
-          if [ ! -f ./gradlew ]; then
+          if [ ! -f ./apk/gradlew ]; then
             echo "Error: gradlew not found in apk directory!"
             exit 1
           fi
 
       - name: Grant execute permission for gradlew
-        run: chmod +x ./gradlew
+        run: chmod +x ./apk/gradlew
 
       - name: Run Unit Tests
-        run: ./gradlew test --stacktrace
-
+        run: ./apk/gradlew test
+        
       - name: CI Passed message
         if: success()
         run: echo "Testerna gick igenom i PR!"
