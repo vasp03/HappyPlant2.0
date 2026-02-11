@@ -25,7 +25,6 @@ jobs:
 
       - name: Enter apk directory
         run: cd /apk
-             ls
 
       - name: Verify Gradle Wrapper
         run: |
