@@ -59,12 +59,12 @@ class PlantViewModel : ViewModel() {
                     else -> WaterAmount.RARELY
                 }
                 val newPlant = UserPlant(
-                    plantDetails.common_name,
-                    plantDetails.scientific_name,
-                    plantDetails.imageUrl,
-                    intervalDays,
-                    waterAmount,
-                    Date()
+                    name = plantDetails.common_name,
+                    description = plantDetails.scientific_name,
+                    imageURL = plantDetails.imageUrl,
+                    wateringInterval = intervalDays,
+                    wateringAmount = waterAmount,
+                    lastTimeWatered = Date()
                 )
                 _userPlants.value = _userPlants.value + newPlant
             } catch (e: Exception) {
@@ -74,11 +74,19 @@ class PlantViewModel : ViewModel() {
     }
 
     fun waterUserPlant(plant: UserPlant) {
-        val updatedPlant = plant.copy(lastTimeWatered = Date())
-        _userPlants.value = _userPlants.value.map { if (it.name == plant.name) updatedPlant else it }
+        _userPlants.value = _userPlants.value.map { 
+            if (it.id == plant.id) it.copy(lastTimeWatered = Date()) else it 
+        }
     }
 
     fun deleteUserPlant(plant: UserPlant) {
-        _userPlants.value = _userPlants.value - plant
+        _userPlants.value = _userPlants.value.filter { it.id != plant.id }
+    }
+
+    fun updatePlantCategory(plant: UserPlant, newCategory: String) {
+        val categoryToSet = if (newCategory == "Unassigned") "" else newCategory
+        _userPlants.value = _userPlants.value.map {
+            if (it.id == plant.id) it.copy(category = categoryToSet) else it
+        }
     }
 }

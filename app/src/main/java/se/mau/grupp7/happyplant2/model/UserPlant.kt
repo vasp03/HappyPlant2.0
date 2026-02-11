@@ -1,14 +1,18 @@
 package se.mau.grupp7.happyplant2.model
 
 import java.util.Date
+import java.util.UUID
 
 data class UserPlant(
+    val id: String = UUID.randomUUID().toString(),
     val name: String,
     val description: String,
     val imageURL: String,
     val wateringInterval: Int,
     val wateringAmount: WaterAmount,
-    val lastTimeWatered: Date
+    var lastTimeWatered: Date,
+    val dateAdded: Date = Date(),
+    var category: String = ""
 ) {
     fun daysUntilWatering(): Int {
         val millisSince = System.currentTimeMillis() - lastTimeWatered.time
