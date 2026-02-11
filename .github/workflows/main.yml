@@ -34,7 +34,8 @@ jobs:
         run: chmod +x ./apk/gradlew
 
       - name: Run Unit Tests
-        run: ./apk/gradlew test
+        working-directory: apk
+        run: ./gradlew test
         
       - name: CI Passed message
         if: success()
