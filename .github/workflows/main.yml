@@ -24,7 +24,8 @@ jobs:
           cache: 'gradle'
 
       - name: Enter apk directory
-        run: cd apk
+        run: cd /apk
+             ls -la /apk
 
       - name: Verify Gradle Wrapper
         run: |
