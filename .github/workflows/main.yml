@@ -23,8 +23,16 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
+      - name: List repo files (debug)
+        run: |
+          echo "Repository root:"
+          ls -la
+          echo "apk directory:"
+          ls -la apk || true
+
       - name: Grant execute permission for apk/gradlew
-        run: chmod +x apk/gradlew
+        working-directory: apk
+        run: chmod +x gradlew
 
       - name: Run Unit Tests
         working-directory: apk
