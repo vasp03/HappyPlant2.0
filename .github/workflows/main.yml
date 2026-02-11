@@ -23,10 +23,11 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
+      - name: Grant execute permission for apk/gradlew
+        run: chmod +x apk/gradlew
 
       - name: Run Unit Tests
+        working-directory: apk
         run: ./gradlew test
 
       - name: CI Passed message
