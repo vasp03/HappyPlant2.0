@@ -23,6 +23,9 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
+      - name: Enter Gradle Folder
+        run: cd apk
+
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
