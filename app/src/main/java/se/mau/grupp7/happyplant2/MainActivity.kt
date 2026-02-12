@@ -29,11 +29,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Forest
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.WaterDrop
@@ -73,12 +73,14 @@ import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
+import se.mau.grupp7.happyplant2.model.Defect
 import se.mau.grupp7.happyplant2.model.PlantDetails
 import se.mau.grupp7.happyplant2.model.SortOption
 import se.mau.grupp7.happyplant2.model.UserPlant
@@ -118,8 +120,10 @@ fun MainScreen(viewModel: PlantViewModel) {
             startDestination = "home",
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable("home") { BonsaiScreen() }
-            composable("search") { 
+            composable("home") {
+                BonsaiScreen(viewModel)
+            }
+            composable("search") {
                 PlantDiscoverScreen(
                     plantTypes = plantList,
                     onSearch = { query -> viewModel.getFlowers(query) },
@@ -147,7 +151,8 @@ fun MainScreen(viewModel: PlantViewModel) {
                             navController.popBackStack()
                         },
                         onWater = { viewModel.waterUserPlant(it) },
-                        onCategoryChange = { p, cat -> viewModel.updatePlantCategory(p, cat) }
+                        onCategoryChange = { p, cat -> viewModel.updatePlantCategory(p, cat) },
+                        onDefectChange = { p, defect -> viewModel.updatePlantDefect(p, defect) }
                     )
                 } else {
                     Text("Plant not found", color = Color.White)
@@ -160,7 +165,7 @@ fun MainScreen(viewModel: PlantViewModel) {
 @Composable
 fun BottomNavigationBar(navController: NavHostController) {
     val items = listOf(
-        NavigationItem("search", Icons.AutoMirrored.Filled.MenuBook, "Search"),
+        NavigationItem("search", Icons.Filled.MenuBook, "Search"),
         NavigationItem("home", Icons.Filled.Forest, "Home"),
         NavigationItem("plantList", Icons.Filled.Yard, "Your Plants")
     )
@@ -244,8 +249,18 @@ fun DayItem(date: Date, needsWatering: Boolean) {
 }
 
 @Composable
-fun BonsaiScreen() {
+fun BonsaiScreen(viewModel: PlantViewModel) {
     var isCalendarVisible by remember { mutableStateOf(false) }
+    val healthPercentage by viewModel.overallHealthPercentage.collectAsState()
+
+    val bonsaiRes = when {
+        healthPercentage >= 90 -> R.drawable.bonsai_100
+        healthPercentage >= 70 -> R.drawable.bonsai_80
+        healthPercentage >= 50 -> R.drawable.bonsai_60
+        healthPercentage >= 30 -> R.drawable.bonsai_40
+        healthPercentage >= 10 -> R.drawable.bonsai_20
+        else -> R.drawable.bonsai_0
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         val bgImageBitmap = ImageBitmap.imageResource(id = R.drawable.pixelated_background)
@@ -278,7 +293,7 @@ fun BonsaiScreen() {
                     )
             )
 
-            val bonsaiImageBitmap = ImageBitmap.imageResource(id = R.drawable.bonsai_100)
+            val bonsaiImageBitmap = ImageBitmap.imageResource(id = bonsaiRes)
             Image(
                 painter = BitmapPainter(bonsaiImageBitmap, filterQuality = FilterQuality.None),
                 contentDescription = "Bonsai Tree",
@@ -591,7 +606,8 @@ fun PlantDetailsScreen(
     plant: UserPlant,
     onRemove: (UserPlant) -> Unit,
     onWater: (UserPlant) -> Unit,
-    onCategoryChange: (UserPlant, String) -> Unit
+    onCategoryChange: (UserPlant, String) -> Unit,
+    onDefectChange: (UserPlant, Defect) -> Unit,
 ) {
     val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
     var lastWateredTime by remember(plant.lastTimeWatered) { mutableStateOf(dateFormat.format(plant.lastTimeWatered)) }
@@ -618,36 +634,74 @@ fun PlantDetailsScreen(
             style = MaterialTheme.typography.bodyLarge
         )
         Text(text = "Last watered: $lastWateredTime", style = MaterialTheme.typography.bodyLarge, color = Color.White)
+        Text(text = "Health: ${plant.healthStatus}/5", style = MaterialTheme.typography.bodyLarge, color = Color.White)
         Spacer(modifier = Modifier.height(16.dp))
 
-        var expanded by remember { mutableStateOf(false) }
+        var categoryExpanded by remember { mutableStateOf(false) }
         val categories = listOf("Living Room", "Kitchen", "Bedroom", "Unassigned")
         var selectedCategory by remember { mutableStateOf(plant.category.ifEmpty { "Unassigned" }) }
 
         ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = !expanded }
+            expanded = categoryExpanded,
+            onExpandedChange = { categoryExpanded = !categoryExpanded }
         ) {
             TextField(
                 value = selectedCategory,
                 onValueChange = {},
                 readOnly = true,
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                label = { Text("Category") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
                 modifier = Modifier
                     .menuAnchor()
                     .fillMaxWidth()
             )
             ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
+                expanded = categoryExpanded,
+                onDismissRequest = { categoryExpanded = false },
             ) {
                 categories.forEach { category ->
                     DropdownMenuItem(
                         text = { Text(category) },
                         onClick = {
                             selectedCategory = category
-                            expanded = false
+                            categoryExpanded = false
                             onCategoryChange(plant, category)
+                        }
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        var defectExpanded by remember { mutableStateOf(false) }
+        var selectedDefect by remember { mutableStateOf(plant.defect) }
+
+        ExposedDropdownMenuBox(
+            expanded = defectExpanded,
+            onExpandedChange = { defectExpanded = !defectExpanded }
+        ) {
+            TextField(
+                value = selectedDefect.displayName,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Defect") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = defectExpanded) },
+                modifier = Modifier
+                    .menuAnchor()
+                    .fillMaxWidth()
+            )
+            ExposedDropdownMenu(
+                expanded = defectExpanded,
+                onDismissRequest = { defectExpanded = false },
+            ) {
+                Defect.entries.forEach { defect ->
+                    DropdownMenuItem(
+                        text = { Text(defect.displayName) },
+                        onClick = {
+                            selectedDefect = defect
+                            defectExpanded = false
+                            onDefectChange(plant, defect)
                         }
                     )
                 }
