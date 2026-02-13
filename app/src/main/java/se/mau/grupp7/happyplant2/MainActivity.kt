@@ -65,6 +65,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import coil.compose.AsyncImage
 import se.mau.grupp7.happyplant2.model.Defect
 import se.mau.grupp7.happyplant2.model.PlantDetails
@@ -92,41 +96,115 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MainScreen(viewModel: PlantViewModel) {
+
     val navController = rememberNavController()
+    val pagerState = rememberPagerState(initialPage = 1, pageCount = { 3 })
+    val scope = rememberCoroutineScope()
+
     val plantList by viewModel.flowerList.collectAsState()
     val userPlants by viewModel.userPlants.collectAsState()
     val context = LocalContext.current
 
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
+    // Hide bottom bar on details screen
+    val showBottomBar = currentRoute != "plantDetails/{plantId}"
+
     Scaffold(
-        bottomBar = { BottomNavigationBar(navController) },
-        containerColor = Color(0xFF23213E)
+        containerColor = Color(0xFF23213E),
+        bottomBar = {
+            if (showBottomBar) {
+                NavigationBar(containerColor = Color(0xFF23213E)) {
+
+                    val items = listOf(
+                        NavigationItem("search", Icons.AutoMirrored.Filled.MenuBook, "Search"),
+                        NavigationItem("home", Icons.Filled.Forest, "Home"),
+                        NavigationItem("plantList", Icons.Filled.Yard, "Your Plants")
+                    )
+
+                    items.forEachIndexed { index, item ->
+                        NavigationBarItem(
+                            icon = {
+                                Icon(
+                                    item.icon,
+                                    contentDescription = item.title,
+                                    tint = Color.White
+                                )
+                            },
+                            label = {
+                                Text(text = item.title, color = Color.White)
+                            },
+                            selected = pagerState.currentPage == index,
+                            onClick = {
+                                scope.launch {
+                                    pagerState.animateScrollToPage(index)
+                                }
+                            },
+                            colors = NavigationBarItemDefaults.colors(
+                                indicatorColor = Color(0xFF1A1830)
+                            )
+                        )
+                    }
+                }
+            }
+        }
     ) { innerPadding ->
+
         NavHost(
             navController = navController,
-            startDestination = "home",
+            startDestination = "mainTabs",
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable("home") { BonsaiScreen(viewModel) }
-            composable("search") { 
-                PlantDiscoverScreen(
-                    plantTypes = plantList,
-                    onSearch = { query -> viewModel.getFlowers(query) },
-                    onAdd = { plantDetails -> 
-                        viewModel.addPlantToUserCollection(plantDetails) {
-                            Toast.makeText(context, "Failed to add plant", Toast.LENGTH_SHORT).show()
+
+            // Main tab container (swipeable)
+            composable("mainTabs") {
+
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize()
+                ) { page ->
+
+                    when (page) {
+
+                        0 -> {
+                            PlantDiscoverScreen(
+                                plantTypes = plantList,
+                                onSearch = { query ->
+                                    viewModel.getFlowers(query)
+                                },
+                                onAdd = { plantDetails ->
+                                    viewModel.addPlantToUserCollection(plantDetails) {
+                                        Toast.makeText(
+                                            context,
+                                            "Failed to add plant",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                }
+                            )
+                        }
+
+                        1 -> {
+                            BonsaiScreen(viewModel)
+                        }
+
+                        2 -> {
+                            LibraryScreen(
+                                userPlantList = userPlants,
+                                navController = navController
+                            )
                         }
                     }
-                ) 
+                }
             }
-            composable("plantList") {
-                LibraryScreen(
-                    userPlantList = userPlants,
-                    navController = navController
-                )
-            }
+
+            // Details screen (separate navigation destination)
             composable("plantDetails/{plantId}") { backStackEntry ->
+
                 val plantId = backStackEntry.arguments?.getString("plantId")
                 val plant = userPlants.find { it.id == plantId }
+
                 if (plant != null) {
                     PlantScreen(
                         plant = plant,
@@ -135,44 +213,21 @@ fun MainScreen(viewModel: PlantViewModel) {
                             navController.popBackStack()
                         },
                         onWater = { viewModel.waterUserPlant(it) },
-                        onCategoryChange = { p, cat -> viewModel.updatePlantCategory(p, cat) },
-                        onDefectChange = { p, defect -> viewModel.updatePlantDefect(p, defect) },
-                        defectOptions = Defect.entries
+                        onCategoryChange = { p, cat ->
+                            viewModel.updatePlantCategory(p, cat)
+                        },
+                        onDefectChange = { p, defect ->
+                            viewModel.updatePlantDefect(p, defect)
+                        },
+                        defectOptions = Defect.entries,
+                        onClose = {
+                            navController.popBackStack()
+                        }
                     )
                 } else {
                     Text("Plant not found", color = Color.White)
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun BottomNavigationBar(navController: NavHostController) {
-    val items = listOf(
-        NavigationItem("search", Icons.AutoMirrored.Filled.MenuBook, "Search"),
-        NavigationItem("home", Icons.Filled.Forest, "Home"),
-        NavigationItem("plantList", Icons.Filled.Yard, "Your Plants")
-    )
-    NavigationBar(containerColor = Color(0xFF23213E)) {
-        val navBackStackEntry by navController.currentBackStackEntryAsState()
-        val currentRoute = navBackStackEntry?.destination?.route
-        items.forEach { item ->
-            NavigationBarItem(
-                icon = { Icon(item.icon, contentDescription = item.title, tint = Color.White) },
-                label = { Text(text = item.title, color = Color.White) },
-                selected = currentRoute == item.route,
-                onClick = {
-                    navController.navigate(item.route) {
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
-                colors = NavigationBarItemDefaults.colors(
-                    indicatorColor = Color(0xFF1A1830)
-                ),
-                modifier = Modifier.size(32.dp)
-            )
         }
     }
 }
