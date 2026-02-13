@@ -14,7 +14,10 @@ data class UserPlant(
     val dateAdded: Date = Date(),
     var category: String = "",
     val healthStatus: Int = 5,
-    val defect: Defect = Defect.NONE
+    val defect: Defect = Defect.NONE,
+    val family: String = "",
+    val sunlight: String = "",
+    val wateringNeeds: String = ""
 ) {
     fun daysUntilWatering(): Int {
         val millisSince = System.currentTimeMillis() - lastTimeWatered.time

@@ -1,13 +1,11 @@
 package se.mau.grupp7.happyplant2
 
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.setMain
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import se.mau.grupp7.happyplant2.model.PlantDetails
-import se.mau.grupp7.happyplant2.model.PlantType
+import se.mau.grupp7.happyplant2.oldfiles.PlantType
 import se.mau.grupp7.happyplant2.viewmodel.PlantViewModel
 
 class UnitTest {

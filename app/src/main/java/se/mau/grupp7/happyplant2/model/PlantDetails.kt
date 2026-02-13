@@ -7,5 +7,6 @@ data class PlantDetails(
     val common_name: String,
     val scientific_name: String,
     val genus: String,
+    val family: String,
     val imageUrl: String
 ) : Serializable

@@ -1,4 +1,4 @@
-package se.mau.grupp7.happyplant2.model;
+package se.mau.grupp7.happyplant2.oldfiles;
 
 public class PlantType {
     private final String name;

@@ -35,6 +35,7 @@ class PlantViewModel : ViewModel() {
                         common_name = ft.common_name,
                         scientific_name = ft.scientific_name.joinToString(", "),
                         genus = ft.genus ?: "",
+                        family = ft.family ?: "",
                         imageUrl = ft.default_image?.regular_url ?: ""
                     )
                 }
@@ -68,7 +69,10 @@ class PlantViewModel : ViewModel() {
                     imageURL = plantDetails.imageUrl,
                     wateringInterval = intervalDays,
                     wateringAmount = waterAmount,
-                    lastTimeWatered = Date()
+                    lastTimeWatered = Date(),
+                    family = plantDetails.family,
+                    sunlight = details.sunlight.joinToString(", "),
+                    wateringNeeds = details.watering
                 )
                 _userPlants.value = _userPlants.value + newPlant
             } catch (e: Exception) {
@@ -95,8 +99,8 @@ class PlantViewModel : ViewModel() {
     }
 
     fun waterUserPlant(plant: UserPlant) {
-        _userPlants.value = _userPlants.value.map { 
-            if (it.id == plant.id) it.copy(lastTimeWatered = Date()) else it 
+        _userPlants.value = _userPlants.value.map {
+            if (it.id == plant.id) it.copy(lastTimeWatered = Date()) else it
         }
     }
 

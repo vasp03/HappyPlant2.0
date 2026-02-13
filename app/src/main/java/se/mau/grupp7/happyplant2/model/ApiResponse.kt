@@ -35,6 +35,8 @@ data class DefaultImage(
 
 data class SpeciesDetails(
     val watering: String = "Average",
+    @SerializedName("sunlight")
+    val sunlight: List<String> = emptyList(),
     val growth: Growth? = null
 )
 
