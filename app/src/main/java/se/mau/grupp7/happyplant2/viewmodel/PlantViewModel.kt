@@ -5,6 +5,10 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.SharingStarted
+import se.mau.grupp7.happyplant2.model.Defect
 import se.mau.grupp7.happyplant2.model.PlantDetails
 import se.mau.grupp7.happyplant2.model.UserPlant
 import se.mau.grupp7.happyplant2.model.WaterAmount
@@ -73,6 +77,23 @@ class PlantViewModel : ViewModel() {
         }
     }
 
+    fun updatePlantDefect(plantToUpdate: UserPlant, defect: Defect) {
+        val healthModifier = when (defect) {
+            Defect.WILTING_LEAVES -> -1
+            Defect.DEAD -> -5
+            else -> 0
+        }
+        val newHealth = 5 + healthModifier
+
+        _userPlants.value = _userPlants.value.map { plant ->
+            if (plant.id == plantToUpdate.id) {
+                plant.copy(healthStatus = newHealth, defect = defect)
+            } else {
+                plant
+            }
+        }
+    }
+
     fun waterUserPlant(plant: UserPlant) {
         _userPlants.value = _userPlants.value.map { 
             if (it.id == plant.id) it.copy(lastTimeWatered = Date()) else it 
@@ -89,4 +110,20 @@ class PlantViewModel : ViewModel() {
             if (it.id == plant.id) it.copy(category = categoryToSet) else it
         }
     }
+
+    val overallHealthPercentage: StateFlow<Int> =
+        _userPlants.map { plants ->
+
+            if (plants.isEmpty()) return@map 100
+
+            val totalHealth = plants.sumOf { it.healthStatus }
+            val maxHealth = plants.size * 5
+
+            ((totalHealth.toFloat() / maxHealth) * 100).toInt()
+
+        }.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            100
+        )
 }
