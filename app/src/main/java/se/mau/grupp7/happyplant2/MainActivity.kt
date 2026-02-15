@@ -118,7 +118,7 @@ fun MainScreen(viewModel: PlantViewModel) {
                 NavigationBar(containerColor = Color(0xFF23213E)) {
 
                     val items = listOf(
-                        NavigationItem("search", Icons.AutoMirrored.Filled.MenuBook, "Search"),
+                        NavigationItem("plantSearch", Icons.AutoMirrored.Filled.MenuBook, "PlantSearch"),
                         NavigationItem("home", Icons.Filled.Forest, "Home"),
                         NavigationItem("plantList", Icons.Filled.Yard, "Your Plants")
                     )
