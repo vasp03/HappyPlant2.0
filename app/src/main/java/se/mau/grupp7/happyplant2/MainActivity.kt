@@ -445,6 +445,12 @@ fun PlantDiscoverScreen(
 
 @Composable
 fun PlantCard(plantDetails: PlantDetails, onAdd: (PlantDetails) -> Unit) {
+
+    fun fmt(value : String?): String = value?.takeIf { it.isNotBlank() } ?: "Unknown"
+
+    val sunlightText =
+        plantDetails.sunlight?.takeIf { it.isNotEmpty() }?.joinToString(", ") ?: "Loading…"
+
     Card(modifier = Modifier.padding(8.dp)) {
         Column(modifier = Modifier.fillMaxWidth()) {
             AsyncImage(
@@ -463,8 +469,11 @@ fun PlantCard(plantDetails: PlantDetails, onAdd: (PlantDetails) -> Unit) {
                 contentAlignment = Alignment.TopStart
             ) {
                 Column {
-                    Text(text = plantDetails.common_name)
-                    Text(text = plantDetails.scientific_name)
+                    Text(text = fmt(plantDetails.common_name))
+                    Text(text = fmt(plantDetails.scientific_name))
+                    Text(text = "Genus: ${fmt(plantDetails.genus)}")
+                    Text(text = "Watering: ${plantDetails.watering ?: "Loading..."}")
+                    Text(text = "Sunlight: $sunlightText")
                 }
             }
 

@@ -1,5 +1,6 @@
 package se.mau.grupp7.happyplant2.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,10 +30,15 @@ class PlantViewModel : ViewModel() {
     val categories: StateFlow<List<String>> = _categories
 
     fun getFlowers(query: String) {
+        val q = query.trim()
+        if(q.isBlank()) {
+            _flowerList.value = emptyList()
+            return
+        }
         viewModelScope.launch {
             try {
                 val response = repository.getSpecies(query)
-                _flowerList.value = response.data.map { ft ->
+                val mapped = response.data.map { ft ->
                     PlantDetails(
                         id = ft.id,
                         common_name = ft.common_name,
@@ -42,10 +48,64 @@ class PlantViewModel : ViewModel() {
                         imageUrl = ft.default_image?.regular_url ?: ""
                     )
                 }
+
+                val ranked = rankPlants(mapped, q)
+                _flowerList.value = ranked
+
+                val topResults = 20
+                ranked.take(topResults).forEach { plant ->
+                    launch {
+                        try {
+                            val details = repository.getSpeciesDetails(plant.id)
+
+                            _flowerList.value = _flowerList.value.map { existing ->
+                                if (existing.id == plant.id)  {
+                                    existing.copy(
+                                        watering = details.watering,
+                                        sunlight = details.sunlight
+                                    )
+                                } else existing
+                            }
+                        } catch (e : Exception){
+                            //if details does fail, the card will still be shown as loading or as unknown
+                        }
+                    }
+                }
+
+
             } catch (e: Exception) {
-                // Handle error
+                Log.e("HP_SEARCH", "Search failed for query='$q'", e)
+                _flowerList.value = emptyList()
             }
         }
+    }
+
+    private fun rankPlants(
+        plants: List<PlantDetails>,
+        query: String
+    ): List<PlantDetails> {
+
+        val q = query.trim().lowercase()
+        if (q.isBlank()) return plants
+
+        fun score(p: PlantDetails): Int {
+            val cn = p.common_name?.lowercase() ?: ""
+            val sn = p.scientific_name.lowercase()
+            val genus = p.genus.lowercase()
+
+            return when {
+                cn.startsWith(q) -> 0
+                sn.startsWith(q) -> 0
+                cn.contains(q) -> 1
+                sn.contains(q) -> 1
+                genus.startsWith(q) -> 2
+                else -> 10
+            }
+        }
+
+        return plants
+            .sortedBy { score(it) }
+            .filter { score(it) < 10 }
     }
 
     fun addPlantToUserCollection(plantDetails: PlantDetails, onError: () -> Unit) {
