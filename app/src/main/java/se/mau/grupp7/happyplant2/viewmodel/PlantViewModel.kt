@@ -35,12 +35,15 @@ class PlantViewModel : ViewModel() {
     val suggestions: StateFlow<List<String>> = _suggestions
 
     fun getFlowers(query: String) {
+
         val q = query.trim()
         if(q.isBlank()) {
             _flowerList.value = emptyList()
             _suggestions .value = emptyList()
             return
         }
+        Log.d("HP_SEARCH", "getFlowers('$q')")
+
         viewModelScope.launch {
             try {
                 val response = repository.getSpecies(q)
@@ -54,9 +57,13 @@ class PlantViewModel : ViewModel() {
                         imageUrl = ft.default_image?.regular_url ?: ""
                     )
                 }
+                Log.d("HP_SEARCH", "API returned ${response.data.size} items for '$q'")
+
 
                 val ranked = rankPlants(mapped, q)
                 _flowerList.value = ranked
+                Log.d("HP_SEARCH", "ranked size = ${ranked.size}")
+
 
                 _suggestions.value = if(ranked.isEmpty()) {
                     suggestQuery(q, popularPlants, maxDistance = 2)
@@ -64,7 +71,7 @@ class PlantViewModel : ViewModel() {
                     emptyList()
                 }
 
-                val topResults = 20
+                val topResults = 5
                 ranked.take(topResults).forEach { plant ->
                     launch {
                         try {
@@ -102,7 +109,7 @@ class PlantViewModel : ViewModel() {
         if (q.isBlank()) return plants
 
         fun score(p: PlantDetails): Int {
-            val cn = p.common_name?.lowercase() ?: ""
+            val cn = p.common_name.lowercase()
             val sn = p.scientific_name.lowercase()
             val genus = p.genus.lowercase()
 
