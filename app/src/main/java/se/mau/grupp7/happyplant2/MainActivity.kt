@@ -103,6 +103,7 @@ fun MainScreen(viewModel: PlantViewModel) {
 
     val plantList by viewModel.flowerList.collectAsState()
     val userPlants by viewModel.userPlants.collectAsState()
+    val suggestions by viewModel.suggestions.collectAsState()
     val context = LocalContext.current
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -170,6 +171,7 @@ fun MainScreen(viewModel: PlantViewModel) {
                         0 -> {
                             PlantDiscoverScreen(
                                 plantTypes = plantList,
+                                suggestions = suggestions,
                                 onSearch = { query ->
                                     viewModel.getFlowers(query)
                                 },
@@ -411,6 +413,7 @@ fun BonsaiScreen(viewModel: PlantViewModel) {
 @Composable
 fun PlantDiscoverScreen(
     plantTypes: List<PlantDetails>,
+    suggestions: List<String>,
     onSearch: (String) -> Unit,
     onAdd: (PlantDetails) -> Unit
 ) {

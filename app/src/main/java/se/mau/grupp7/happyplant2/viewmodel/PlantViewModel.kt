@@ -29,15 +29,21 @@ class PlantViewModel : ViewModel() {
     private val _categories = MutableStateFlow<List<String>>(emptyList())
     val categories: StateFlow<List<String>> = _categories
 
+    private val popularPlants = listOf("rosa", "rose", "lavender", "monstera")
+
+    private val _suggestions = MutableStateFlow<List<String>>(emptyList())
+    val suggestions: StateFlow<List<String>> = _suggestions
+
     fun getFlowers(query: String) {
         val q = query.trim()
         if(q.isBlank()) {
             _flowerList.value = emptyList()
+            _suggestions .value = emptyList()
             return
         }
         viewModelScope.launch {
             try {
-                val response = repository.getSpecies(query)
+                val response = repository.getSpecies(q)
                 val mapped = response.data.map { ft ->
                     PlantDetails(
                         id = ft.id,
@@ -51,6 +57,12 @@ class PlantViewModel : ViewModel() {
 
                 val ranked = rankPlants(mapped, q)
                 _flowerList.value = ranked
+
+                _suggestions.value = if(ranked.isEmpty()) {
+                    suggestQuery(q, popularPlants, maxDistance = 2)
+                } else{
+                    emptyList()
+                }
 
                 val topResults = 20
                 ranked.take(topResults).forEach { plant ->
@@ -76,6 +88,7 @@ class PlantViewModel : ViewModel() {
             } catch (e: Exception) {
                 Log.e("HP_SEARCH", "Search failed for query='$q'", e)
                 _flowerList.value = emptyList()
+                _suggestions.value = emptyList()
             }
         }
     }
@@ -184,6 +197,64 @@ class PlantViewModel : ViewModel() {
             } else it
         }
     }
+
+    private fun boundedLevenshtein(a: String, b: String, max: Int): Int {
+        val s = a.lowercase()
+        val t = b.lowercase()
+
+        val n = s.length
+        val m = t.length
+
+        if (kotlin.math.abs(n - m) > max) return max + 1
+        if (n == 0) return m
+        if (m == 0) return n
+
+        var prev = IntArray(m + 1) { it }
+        var curr = IntArray(m + 1)
+
+        for (i in 1..n) {
+            curr[0] = i
+            var rowMin = curr[0]
+            val sc = s[i - 1]
+
+            for (j in 1..m) {
+                val cost = if (sc == t[j - 1]) 0 else 1
+                val del = prev[j] + 1
+                val ins = curr[j - 1] + 1
+                val sub = prev[j - 1] + cost
+                val v = minOf(del, ins, sub)
+                curr[j] = v
+                if (v < rowMin) rowMin = v
+            }
+
+            if (rowMin > max) return max + 1
+
+            val tmp = prev
+            prev = curr
+            curr = tmp
+        }
+
+        return prev[m]
+    }
+
+    private fun suggestQuery(
+        query: String,
+        candidates: List<String>,
+        maxDistance: Int = 2
+    ): List<String> {
+
+        val q = query.trim().lowercase()
+        if (q.length < 3) return emptyList()
+
+        return candidates
+            .map { it to boundedLevenshtein(q, it, maxDistance) }
+            .filter { it.second <= maxDistance }
+            .sortedBy { it.second }
+            .take(5)
+            .map { it.first }
+    }
+
+}
 
     val overallHealthPercentage: StateFlow<Int> =
         _userPlants.map { plants ->
