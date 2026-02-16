@@ -417,7 +417,9 @@ fun PlantDiscoverScreen(
     onSearch: (String) -> Unit,
     onAdd: (PlantDetails) -> Unit
 ) {
-    var text by remember { mutableStateOf("") }
+    var sortOption by remember { mutableStateOf(SortOption.CommonNameAZ) }
+    var searchText by remember { mutableStateOf("") }
+
 
     Column(modifier = Modifier.fillMaxSize()) {
         TextField(
