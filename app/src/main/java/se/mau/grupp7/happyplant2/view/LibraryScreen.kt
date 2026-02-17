@@ -73,7 +73,7 @@ fun LibraryScreen(
             .filter { it.category.isNotEmpty() }
             .groupBy { it.category }
 
-        val displayCategories = (categorizedPlants.keys + listOf("Living Room", "Kitchen", "Bedroom")).distinct().sorted()
+        val displayCategories = categorizedPlants.keys.sorted()
 
         var expandedCategories by remember(displayCategories) { mutableStateOf(displayCategories.toSet()) }
 

@@ -204,26 +204,50 @@ fun MainScreen(viewModel: PlantViewModel) {
 
                 val plantId = backStackEntry.arguments?.getString("plantId")
                 val plant = userPlants.find { it.id == plantId }
+                val categories by viewModel.categories.collectAsState()
 
                 if (plant != null) {
                     PlantScreen(
                         plant = plant,
+
                         onRemove = {
                             viewModel.deleteUserPlant(it)
                             navController.popBackStack()
                         },
+
                         onWater = { viewModel.waterUserPlant(it) },
+
                         onCategoryChange = { p, cat ->
                             viewModel.updatePlantCategory(p, cat)
                         },
+
                         onDefectChange = { p, defect ->
                             viewModel.updatePlantDefect(p, defect)
                         },
+
+                        onDetailsChange = { p, customName, potType, height, notes ->
+                            viewModel.updatePlantDetails(
+                                p,
+                                customName,
+                                potType,
+                                height,
+                                notes
+                            )
+                        },
+
+                        onImageChange = { plant, uri ->
+                            viewModel.updatePlantImage(plant, uri)
+                        },
+
                         defectOptions = Defect.entries,
+
+                        categories = categories,
+
                         onClose = {
                             navController.popBackStack()
                         }
                     )
+
                 } else {
                     Text("Plant not found", color = Color.White)
                 }
