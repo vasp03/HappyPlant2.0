@@ -483,6 +483,28 @@ fun PlantCard(plantDetails: PlantDetails, onAdd: (PlantDetails) -> Unit) {
 @Composable
 fun DefaultPreview() {
     HappyPlant2Theme {
-        MainScreen(PlantViewModel())
+        PlantDiscoverScreen(
+            plantTypes = listOf(
+                PlantDetails(
+                    id = 1,
+                    common_name = "Monstera",
+                    scientific_name = "Monstera deliciosa",
+                    genus = "Monstera",
+                    family = "Araceae",
+                    imageUrl = ""
+                ),
+                PlantDetails(
+                    id = 2,
+                    common_name = "Ficus",
+                    scientific_name = "Ficus lyrata",
+                    genus = "Ficus",
+                    family = "Moraceae",
+                    imageUrl = ""
+                )
+            ),
+            onSearch = {},
+            onAdd = {}
+        )
     }
 }
+

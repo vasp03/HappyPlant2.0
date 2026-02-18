@@ -46,9 +46,7 @@ fun PlantScreen(
     }
 
     var categoryExpanded by remember { mutableStateOf(false) }
-    var selectedCategory by remember {
-        mutableStateOf(plant.category.ifEmpty { "Unassigned" })
-    }
+    var selectedCategory by remember { mutableStateOf(plant.category.ifEmpty { "" }) }
     var defectExpanded by remember { mutableStateOf(false) }
     var selectedDefect by remember { mutableStateOf(plant.defect) }
     var customName by remember(plant.id) { mutableStateOf(plant.customName.ifEmpty { plant.name }) }

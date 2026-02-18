@@ -1,29 +1,29 @@
 package se.mau.grupp7.happyplant2.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.SharingStarted
-import se.mau.grupp7.happyplant2.model.Defect
-import se.mau.grupp7.happyplant2.model.PlantDetails
-import se.mau.grupp7.happyplant2.model.UserPlant
-import se.mau.grupp7.happyplant2.model.WaterAmount
+import se.mau.grupp7.happyplant2.local.LocalPlantRepository
+import se.mau.grupp7.happyplant2.model.*
 import se.mau.grupp7.happyplant2.network.PlantRepository
 import java.util.Date
 
-class PlantViewModel : ViewModel() {
+class PlantViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val repository = PlantRepository()
-
+    private val remoteRepository = PlantRepository()
+    private val localRepository = LocalPlantRepository(application)
     private val _flowerList = MutableStateFlow<List<PlantDetails>>(emptyList())
     val flowerList: StateFlow<List<PlantDetails>> = _flowerList
 
-    private val _userPlants = MutableStateFlow<List<UserPlant>>(emptyList())
-    val userPlants: StateFlow<List<UserPlant>> = _userPlants
+    val userPlants: StateFlow<List<UserPlant>> =
+        localRepository.plants
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5000),
+                emptyList()
+            )
 
     private val _categories = MutableStateFlow<List<String>>(emptyList())
     val categories: StateFlow<List<String>> = _categories
@@ -31,7 +31,8 @@ class PlantViewModel : ViewModel() {
     fun getFlowers(query: String) {
         viewModelScope.launch {
             try {
-                val response = repository.getSpecies(query)
+                val response = remoteRepository.getSpecies(query)
+
                 _flowerList.value = response.data.map { ft ->
                     PlantDetails(
                         id = ft.id,
@@ -42,16 +43,21 @@ class PlantViewModel : ViewModel() {
                         imageUrl = ft.default_image?.regular_url ?: ""
                     )
                 }
-            } catch (e: Exception) {
-                // Handle error
+            } catch (_: Exception) {
+                // :/
             }
         }
     }
 
-    fun addPlantToUserCollection(plantDetails: PlantDetails, onError: () -> Unit) {
+    fun addPlantToUserCollection(
+        plantDetails: PlantDetails,
+        onError: () -> Unit
+    ) {
         viewModelScope.launch {
             try {
-                val details = repository.getSpeciesDetails(plantDetails.id)
+                val details =
+                    remoteRepository.getSpeciesDetails(plantDetails.id)
+
                 val intervalDays = when (details.watering.lowercase()) {
                     "frequent" -> 3
                     "average" -> 7
@@ -59,6 +65,7 @@ class PlantViewModel : ViewModel() {
                     "none" -> 30
                     else -> 7
                 }
+
                 val waterAmount = when (details.watering.lowercase()) {
                     "frequent" -> WaterAmount.OFTEN
                     "average" -> WaterAmount.RARELY
@@ -66,6 +73,7 @@ class PlantViewModel : ViewModel() {
                     "none" -> WaterAmount.NEVER
                     else -> WaterAmount.RARELY
                 }
+
                 val newPlant = UserPlant(
                     name = plantDetails.common_name,
                     description = plantDetails.scientific_name,
@@ -75,103 +83,119 @@ class PlantViewModel : ViewModel() {
                     lastTimeWatered = Date(),
                     family = plantDetails.family,
                     sunlight = details.sunlight.joinToString(", "),
-                    wateringNeeds = details.watering
+                    wateringNeeds = details.watering,
+                    healthStatus = 5,
+                    defect = Defect.NONE
                 )
-                _userPlants.value = _userPlants.value + newPlant
-            } catch (e: Exception) {
+
+                localRepository.insert(newPlant)
+
+            } catch (_: Exception) {
                 onError()
             }
         }
     }
 
-    fun updatePlantDefect(plantToUpdate: UserPlant, defect: Defect) {
-        val healthModifier = when (defect) {
-            Defect.WILTING_LEAVES -> -1
-            Defect.DEAD -> -5
-            else -> 0
-        }
-        val newHealth = 5 + healthModifier
+    fun updatePlantDefect(plant: UserPlant, defect: Defect) {
+        viewModelScope.launch {
 
-        _userPlants.value = _userPlants.value.map { plant ->
-            if (plant.id == plantToUpdate.id) {
-                plant.copy(healthStatus = newHealth, defect = defect)
-            } else {
-                plant
+            val healthModifier = when (defect) {
+                Defect.WILTING_LEAVES -> -1
+                Defect.DEAD -> -5
+                else -> 0
             }
+
+            val newHealth =
+                (plant.healthStatus + healthModifier).coerceIn(0, 5)
+
+            localRepository.update(
+                plant.copy(
+                    healthStatus = newHealth,
+                    defect = defect
+                )
+            )
         }
     }
 
     fun waterUserPlant(plant: UserPlant) {
-        _userPlants.value = _userPlants.value.map {
-            if (it.id == plant.id) it.copy(lastTimeWatered = Date()) else it
+        viewModelScope.launch {
+            localRepository.update(
+                plant.copy(lastTimeWatered = Date())
+            )
         }
     }
 
     fun deleteUserPlant(plant: UserPlant) {
-        _userPlants.value = _userPlants.value.filter { it.id != plant.id }
-    }
-
-    fun updatePlantCategory(plant: UserPlant, newCategory: String) {
-        val trimmed = newCategory.trim()
-
-        if (trimmed.isNotEmpty()) {
-            addCategoryIfNotExists(trimmed)
-        }
-
-        _userPlants.value = _userPlants.value.map {
-            if (it.id == plant.id) {
-                it.copy(category = trimmed)
-            } else it
+        viewModelScope.launch {
+            localRepository.delete(plant)
         }
     }
 
-    val overallHealthPercentage: StateFlow<Int> =
-        _userPlants.map { plants ->
-
-            if (plants.isEmpty()) return@map 100
-
-            val totalHealth = plants.sumOf { it.healthStatus }
-            val maxHealth = plants.size * 5
-
-            ((totalHealth.toFloat() / maxHealth) * 100).toInt()
-
-        }.stateIn(
-            viewModelScope,
-            SharingStarted.WhileSubscribed(5000),
-            100
-        )
+    fun updatePlantCategory(
+        plant: UserPlant,
+        newCategory: String
+    ) {
+        viewModelScope.launch {
+            localRepository.update(
+                plant.copy(category = newCategory.trim())
+            )
+        }
+    }
 
     fun updatePlantDetails(
-        plantToUpdate: UserPlant,
+        plant: UserPlant,
         customName: String,
         potType: String,
         heightCm: String,
         notes: String
     ) {
-        _userPlants.value = _userPlants.value.map { plant ->
-            if (plant.id == plantToUpdate.id) {
+        viewModelScope.launch {
+            localRepository.update(
                 plant.copy(
                     customName = customName,
                     potType = potType,
                     heightCm = heightCm,
                     notes = notes
                 )
-            } else plant
-        }
-    }
-
-    fun addCategoryIfNotExists(category: String) {
-        val trimmed = category.trim()
-        if (trimmed.isNotEmpty() && trimmed !in _categories.value) {
-            _categories.value = _categories.value + trimmed
+            )
         }
     }
 
     fun updatePlantImage(plant: UserPlant, newUri: String) {
-        _userPlants.value = _userPlants.value.map {
-            if (it.id == plant.id) {
-                it.copy(localImageUri = newUri)
-            } else it
+        viewModelScope.launch {
+            localRepository.update(
+                plant.copy(localImageUri = newUri)
+            )
+        }
+    }
+
+    val overallHealthPercentage: StateFlow<Int> =
+        userPlants
+            .map { plants ->
+
+                if (plants.isEmpty()) return@map 100
+
+                val totalHealth =
+                    plants.sumOf { it.healthStatus }
+
+                val maxHealth = plants.size * 5
+
+                ((totalHealth.toFloat() / maxHealth) * 100)
+                    .toInt()
+            }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5000),
+                100
+            )
+
+    fun addCategoryIfNotExists(category: String) {
+        val trimmed = category.trim()
+
+        if (trimmed.isNotEmpty()
+            && trimmed !in _categories.value
+        ) {
+            _categories.value += trimmed
         }
     }
 }
