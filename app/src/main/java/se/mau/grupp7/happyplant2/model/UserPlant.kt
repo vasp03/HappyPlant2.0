@@ -5,16 +5,24 @@ import java.util.UUID
 
 data class UserPlant(
     val id: String = UUID.randomUUID().toString(),
+    val customName: String = "",
     val name: String,
     val description: String,
     val imageURL: String,
+    val localImageUri: String? = null,
     val wateringInterval: Int,
     val wateringAmount: WaterAmount,
     var lastTimeWatered: Date,
     val dateAdded: Date = Date(),
     var category: String = "",
     val healthStatus: Int = 5,
-    val defect: Defect = Defect.NONE
+    val defect: Defect = Defect.NONE,
+    val family: String = "",
+    val sunlight: String = "",
+    val wateringNeeds: String = "",
+    val potType: String = "",
+    val heightCm: String = "", // String for easier text input
+    val notes: String = ""
 ) {
     fun daysUntilWatering(): Int {
         val millisSince = System.currentTimeMillis() - lastTimeWatered.time

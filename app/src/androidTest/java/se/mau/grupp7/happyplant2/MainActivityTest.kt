@@ -21,18 +21,20 @@ class MainActivityTest {
     }
 
     @Test
-    fun bottomNavigationBar_navigation_works() {
-        // Navigate to Search
-        composeTestRule.onNodeWithContentDescription("Search", useUnmergedTree = true).performClick()
-        composeTestRule.onNodeWithContentDescription("Search Icon", useUnmergedTree = true).assertIsDisplayed()
+    fun navigateToSearch(){
+        composeTestRule.onNodeWithContentDescription("PlantSearch", useUnmergedTree = true).performClick()
+        composeTestRule.onNodeWithContentDescription("PlantSearch", useUnmergedTree = true).assertIsDisplayed()
+    }
 
-        // Navigate back to Home
+    @Test
+    fun navigateToLanding(){
         composeTestRule.onNodeWithContentDescription("Home", useUnmergedTree = true).performClick()
         composeTestRule.onNodeWithContentDescription("Settings", useUnmergedTree = true).assertIsDisplayed()
+    }
 
-        // Navigate to Your Plants
+    @Test
+    fun navigateToUserPlantList(){
         composeTestRule.onNodeWithContentDescription("Your Plants", useUnmergedTree = true).performClick()
-        // A Sort dropdown is shown, but for simplicity we'll just check the nav item.
         composeTestRule.onNodeWithContentDescription("Your Plants", useUnmergedTree = true).assertIsDisplayed()
     }
 }

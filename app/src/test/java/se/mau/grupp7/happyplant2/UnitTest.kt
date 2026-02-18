@@ -1,13 +1,11 @@
 package se.mau.grupp7.happyplant2
 
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.setMain
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import se.mau.grupp7.happyplant2.model.PlantDetails
-import se.mau.grupp7.happyplant2.model.PlantType
+import se.mau.grupp7.happyplant2.oldfiles.PlantType
 import se.mau.grupp7.happyplant2.viewmodel.PlantViewModel
 
 class UnitTest {
@@ -33,16 +31,19 @@ class UnitTest {
     fun plantDetailsTest() {
         val id = 1
         val name = "Rose"
-        val description = "Rose is a plant."
-        val genus = "Genus"
+        val scientific_name = "Rose but fancy"
+        val genus = "Genus 1"
+        val family = "Family 1"
         val url = "http://url.url"
 
-        val plantDetails = PlantDetails(id, name, description, genus, url)
+        val plantDetails = PlantDetails(id, name, scientific_name, genus, family, url)
+
 
         Assert.assertEquals("ID: ", id.toLong(), plantDetails.id.toLong())
         Assert.assertEquals("Name: ", name, plantDetails.common_name)
-        Assert.assertEquals("Description: ", description, plantDetails.scientific_name)
+        Assert.assertEquals("Scientific Name: ", scientific_name, plantDetails.scientific_name)
         Assert.assertEquals("Genus: ", genus, plantDetails.genus)
+        Assert.assertEquals("Family: ", family, plantDetails.family)
         Assert.assertEquals("Image URL: ", url, plantDetails.imageUrl)
     }
 
@@ -54,16 +55,18 @@ class UnitTest {
         val plant1Name = "Rose"
         val plant1SciName = "Rose but fancy"
         val plant1Genus = "Genus 1"
+        val plant1Family = "Family 1"
         val plant1Image = "image 1"
 
         val plant2Id = 2
         val plant2Name = "Rose 2"
         val plant2SciName = "Rose but fancy 2"
         val plant2Genus = "Genus 2"
+        val plant2Family = "Family 2"
         val plant2Image = "image 2"
 
-        val plant1 = PlantDetails(plant1Id, plant1Name, plant1SciName, plant1Genus, plant1Image)
-        val plant2 = PlantDetails(plant2Id, plant2Name, plant2SciName, plant2Genus, plant2Image)
+        val plant1 = PlantDetails(plant1Id, plant1Name, plant1SciName, plant1Genus, plant1Family, plant1Image)
+        val plant2 = PlantDetails(plant2Id, plant2Name, plant2SciName, plant2Genus, plant2Family, plant2Image)
 
         viewModel.addPlantToUserCollection(plant1) {
         }
@@ -80,16 +83,18 @@ class UnitTest {
         val plant1Name = "Rose"
         val plant1SciName = "Rose but fancy"
         val plant1Genus = "Genus 1"
+        val plant1Family = "Family 1"
         val plant1Image = "image 1"
 
         val plant2Id = 2
         val plant2Name = "Rose 2"
         val plant2SciName = "Rose but fancy 2"
         val plant2Genus = "Genus 2"
+        val plant2Family = "Family 2"
         val plant2Image = "image 2"
 
-        val plant1 = PlantDetails(plant1Id, plant1Name, plant1SciName, plant1Genus, plant1Image)
-        val plant2 = PlantDetails(plant2Id, plant2Name, plant2SciName, plant2Genus, plant2Image)
+        val plant1 = PlantDetails(plant1Id, plant1Name, plant1SciName, plant1Genus, plant1Family, plant1Image)
+        val plant2 = PlantDetails(plant2Id, plant2Name, plant2SciName, plant2Genus, plant2Family, plant2Image)
 
         viewModel.addPlantToUserCollection(plant1) {
         }
@@ -109,16 +114,18 @@ class UnitTest {
         val plant1Name = "Rose"
         val plant1SciName = "Rose but fancy"
         val plant1Genus = "Genus 1"
+        val plant1Family = "Family 1"
         val plant1Image = "image 1"
 
         val plant2Id = 2
         val plant2Name = "Rose 2"
         val plant2SciName = "Rose but fancy 2"
         val plant2Genus = "Genus 2"
+        val plant2Family = "Family 2"
         val plant2Image = "image 2"
 
-        val plant1 = PlantDetails(plant1Id, plant1Name, plant1SciName, plant1Genus, plant1Image)
-        val plant2 = PlantDetails(plant2Id, plant2Name, plant2SciName, plant2Genus, plant2Image)
+        val plant1 = PlantDetails(plant1Id, plant1Name, plant1SciName, plant1Genus, plant1Family, plant1Image)
+        val plant2 = PlantDetails(plant2Id, plant2Name, plant2SciName, plant2Genus, plant2Family, plant2Image)
 
         viewModel.addPlantToUserCollection(plant1) {
         }

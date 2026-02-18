@@ -25,6 +25,9 @@ class PlantViewModel : ViewModel() {
     private val _userPlants = MutableStateFlow<List<UserPlant>>(emptyList())
     val userPlants: StateFlow<List<UserPlant>> = _userPlants
 
+    private val _categories = MutableStateFlow<List<String>>(emptyList())
+    val categories: StateFlow<List<String>> = _categories
+
     fun getFlowers(query: String) {
         viewModelScope.launch {
             try {
@@ -35,6 +38,7 @@ class PlantViewModel : ViewModel() {
                         common_name = ft.common_name,
                         scientific_name = ft.scientific_name.joinToString(", "),
                         genus = ft.genus ?: "",
+                        family = ft.family ?: "",
                         imageUrl = ft.default_image?.regular_url ?: ""
                     )
                 }
@@ -68,7 +72,10 @@ class PlantViewModel : ViewModel() {
                     imageURL = plantDetails.imageUrl,
                     wateringInterval = intervalDays,
                     wateringAmount = waterAmount,
-                    lastTimeWatered = Date()
+                    lastTimeWatered = Date(),
+                    family = plantDetails.family,
+                    sunlight = details.sunlight.joinToString(", "),
+                    wateringNeeds = details.watering
                 )
                 _userPlants.value = _userPlants.value + newPlant
             } catch (e: Exception) {
@@ -95,8 +102,8 @@ class PlantViewModel : ViewModel() {
     }
 
     fun waterUserPlant(plant: UserPlant) {
-        _userPlants.value = _userPlants.value.map { 
-            if (it.id == plant.id) it.copy(lastTimeWatered = Date()) else it 
+        _userPlants.value = _userPlants.value.map {
+            if (it.id == plant.id) it.copy(lastTimeWatered = Date()) else it
         }
     }
 
@@ -105,9 +112,16 @@ class PlantViewModel : ViewModel() {
     }
 
     fun updatePlantCategory(plant: UserPlant, newCategory: String) {
-        val categoryToSet = if (newCategory == "Unassigned") "" else newCategory
+        val trimmed = newCategory.trim()
+
+        if (trimmed.isNotEmpty()) {
+            addCategoryIfNotExists(trimmed)
+        }
+
         _userPlants.value = _userPlants.value.map {
-            if (it.id == plant.id) it.copy(category = categoryToSet) else it
+            if (it.id == plant.id) {
+                it.copy(category = trimmed)
+            } else it
         }
     }
 
@@ -126,4 +140,38 @@ class PlantViewModel : ViewModel() {
             SharingStarted.WhileSubscribed(5000),
             100
         )
+
+    fun updatePlantDetails(
+        plantToUpdate: UserPlant,
+        customName: String,
+        potType: String,
+        heightCm: String,
+        notes: String
+    ) {
+        _userPlants.value = _userPlants.value.map { plant ->
+            if (plant.id == plantToUpdate.id) {
+                plant.copy(
+                    customName = customName,
+                    potType = potType,
+                    heightCm = heightCm,
+                    notes = notes
+                )
+            } else plant
+        }
+    }
+
+    fun addCategoryIfNotExists(category: String) {
+        val trimmed = category.trim()
+        if (trimmed.isNotEmpty() && trimmed !in _categories.value) {
+            _categories.value = _categories.value + trimmed
+        }
+    }
+
+    fun updatePlantImage(plant: UserPlant, newUri: String) {
+        _userPlants.value = _userPlants.value.map {
+            if (it.id == plant.id) {
+                it.copy(localImageUri = newUri)
+            } else it
+        }
+    }
 }
