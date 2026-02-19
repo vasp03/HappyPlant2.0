@@ -1,9 +1,13 @@
 package se.mau.grupp7.happyplant2.model
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import java.util.Date
 import java.util.UUID
 
+@Entity(tableName = "plants")
 data class UserPlant(
+    @PrimaryKey
     val id: String = UUID.randomUUID().toString(),
     val customName: String = "",
     val name: String,
@@ -21,7 +25,7 @@ data class UserPlant(
     val sunlight: String = "",
     val wateringNeeds: String = "",
     val potType: String = "",
-    val heightCm: String = "", // String for easier text input
+    val heightCm: String = "",
     val notes: String = ""
 ) {
     fun daysUntilWatering(): Int {
