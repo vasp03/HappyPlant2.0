@@ -70,28 +70,6 @@ class PlantViewModel : ViewModel() {
                 } else{
                     emptyList()
                 }
-
-                val topResults = 5
-                ranked.take(topResults).forEach { plant ->
-                    launch {
-                        try {
-                            val details = repository.getSpeciesDetails(plant.id)
-
-                            _flowerList.value = _flowerList.value.map { existing ->
-                                if (existing.id == plant.id)  {
-                                    existing.copy(
-                                        watering = details.watering,
-                                        sunlight = details.sunlight
-                                    )
-                                } else existing
-                            }
-                        } catch (e : Exception){
-                            //if details does fail, the card will still be shown as loading or as unknown
-                        }
-                    }
-                }
-
-
             } catch (e: Exception) {
                 Log.e("HP_SEARCH", "Search failed for query='$q'", e)
                 _flowerList.value = emptyList()
@@ -260,8 +238,6 @@ class PlantViewModel : ViewModel() {
             .take(5)
             .map { it.first }
     }
-
-}
 
     val overallHealthPercentage: StateFlow<Int> =
         _userPlants.map { plants ->

@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -417,8 +419,7 @@ fun PlantDiscoverScreen(
     onSearch: (String) -> Unit,
     onAdd: (PlantDetails) -> Unit
 ) {
-    var sortOption by remember { mutableStateOf(SortOption.CommonNameAZ) }
-    var searchText by remember { mutableStateOf("") }
+    var text by remember { mutableStateOf("") }
 
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -436,6 +437,27 @@ fun PlantDiscoverScreen(
             }
         )
 
+        if (suggestions.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = "Did you mean:")
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Row {
+                suggestions.forEach { s ->
+                    Button(
+                        onClick = {
+                            text = s
+                            onSearch(s) }
+                    ) {
+                        Text(s)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             contentPadding = PaddingValues(8.dp),
@@ -452,9 +474,6 @@ fun PlantDiscoverScreen(
 fun PlantCard(plantDetails: PlantDetails, onAdd: (PlantDetails) -> Unit) {
 
     fun fmt(value : String?): String = value?.takeIf { it.isNotBlank() } ?: "Unknown"
-
-    val sunlightText =
-        plantDetails.sunlight?.takeIf { it.isNotEmpty() }?.joinToString(", ") ?: "Loading…"
 
     Card(modifier = Modifier.padding(8.dp)) {
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -477,8 +496,6 @@ fun PlantCard(plantDetails: PlantDetails, onAdd: (PlantDetails) -> Unit) {
                     Text(text = fmt(plantDetails.common_name))
                     Text(text = fmt(plantDetails.scientific_name))
                     Text(text = "Genus: ${fmt(plantDetails.genus)}")
-                    Text(text = "Watering: ${plantDetails.watering ?: "Loading..."}")
-                    Text(text = "Sunlight: $sunlightText")
                 }
             }
 
