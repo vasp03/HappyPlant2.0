@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -103,6 +105,7 @@ fun MainScreen(viewModel: PlantViewModel) {
 
     val plantList by viewModel.flowerList.collectAsState()
     val userPlants by viewModel.userPlants.collectAsState()
+    val suggestions by viewModel.suggestions.collectAsState()
     val context = LocalContext.current
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -170,6 +173,7 @@ fun MainScreen(viewModel: PlantViewModel) {
                         0 -> {
                             PlantDiscoverScreen(
                                 plantTypes = plantList,
+                                suggestions = suggestions,
                                 onSearch = { query ->
                                     viewModel.getFlowers(query)
                                 },
@@ -411,10 +415,12 @@ fun BonsaiScreen(viewModel: PlantViewModel) {
 @Composable
 fun PlantDiscoverScreen(
     plantTypes: List<PlantDetails>,
+    suggestions: List<String>,
     onSearch: (String) -> Unit,
     onAdd: (PlantDetails) -> Unit
 ) {
     var text by remember { mutableStateOf("") }
+
 
     Column(modifier = Modifier.fillMaxSize()) {
         TextField(
@@ -431,6 +437,27 @@ fun PlantDiscoverScreen(
             }
         )
 
+        if (suggestions.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = "Did you mean:")
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Row {
+                suggestions.forEach { s ->
+                    Button(
+                        onClick = {
+                            text = s
+                            onSearch(s) }
+                    ) {
+                        Text(s)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             contentPadding = PaddingValues(8.dp),
@@ -445,6 +472,9 @@ fun PlantDiscoverScreen(
 
 @Composable
 fun PlantCard(plantDetails: PlantDetails, onAdd: (PlantDetails) -> Unit) {
+
+    fun fmt(value : String?): String = value?.takeIf { it.isNotBlank() } ?: "Unknown"
+
     Card(modifier = Modifier.padding(8.dp)) {
         Column(modifier = Modifier.fillMaxWidth()) {
             AsyncImage(
@@ -463,8 +493,9 @@ fun PlantCard(plantDetails: PlantDetails, onAdd: (PlantDetails) -> Unit) {
                 contentAlignment = Alignment.TopStart
             ) {
                 Column {
-                    Text(text = plantDetails.common_name)
-                    Text(text = plantDetails.scientific_name)
+                    Text(text = fmt(plantDetails.common_name))
+                    Text(text = fmt(plantDetails.scientific_name))
+                    Text(text = "Genus: ${fmt(plantDetails.genus)}")
                 }
             }
 
