@@ -12,6 +12,8 @@ import se.mau.grupp7.happyplant2.model.*
 import se.mau.grupp7.happyplant2.network.PlantRepository
 import java.util.Date
 
+
+private const val MILLISECOND_CONVERSION = 86400000L
 class PlantViewModel(application: Application) : AndroidViewModel(application) {
 
     private val remoteRepository = PlantRepository()
@@ -109,6 +111,7 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
 
     fun addPlantToUserCollection(
         plantDetails: PlantDetails,
+        daysAgo: Int,
         onError: () -> Unit
     ) {
         viewModelScope.launch {
@@ -138,7 +141,7 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
                     imageURL = plantDetails.imageUrl,
                     wateringInterval = intervalDays,
                     wateringAmount = waterAmount,
-                    lastTimeWatered = Date(),
+                    lastTimeWatered = Date(System.currentTimeMillis() - (daysAgo * MILLISECOND_CONVERSION)),
                     family = plantDetails.family,
                     sunlight = details.sunlight.joinToString(", "),
                     wateringNeeds = details.watering,
@@ -255,22 +258,6 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
             .take(5)
             .map { it.first }
     }
-
-    val overallHealthPercentage: StateFlow<Int> =
-        _userPlants.map { plants ->
-
-            if (plants.isEmpty()) return@map 100
-
-            val totalHealth = plants.sumOf { it.healthStatus }
-            val maxHealth = plants.size * 5
-
-            ((totalHealth.toFloat() / maxHealth) * 100).toInt()
-
-        }.stateIn(
-            viewModelScope,
-            SharingStarted.WhileSubscribed(5000),
-            100
-        )
 
     fun updatePlantDetails(
         plant: UserPlant,
