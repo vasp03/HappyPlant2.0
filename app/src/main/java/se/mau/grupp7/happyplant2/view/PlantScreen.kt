@@ -1,5 +1,6 @@
 package se.mau.grupp7.happyplant2.view
 
+import se.mau.grupp7.happyplant2.R
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -18,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import se.mau.grupp7.happyplant2.model.Defect
@@ -78,7 +80,8 @@ fun PlantScreen(
         ) {
 
             AsyncImage(
-                model = plant.localImageUri ?: plant.imageURL,
+                model = plant.localImageUri
+                    ?: plant.imageURL.takeIf { it.isNotBlank() },
                 contentDescription = plant.name,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -86,7 +89,10 @@ fun PlantScreen(
                     .clickable {
                         imageLauncher.launch("image/*")
                     },
-                contentScale = ContentScale.Crop
+                contentScale = ContentScale.Crop,
+                placeholder = painterResource(R.drawable.plant_placeholder),
+                error = painterResource(R.drawable.plant_placeholder),
+                fallback = painterResource(R.drawable.plant_placeholder)
             )
 
             Spacer(modifier = Modifier.height(16.dp))

@@ -198,7 +198,12 @@ fun MainScreen(viewModel: PlantViewModel) {
                         2 -> {
                             LibraryScreen(
                                 userPlantList = userPlants,
-                                navController = navController
+                                navController = navController,
+                                onNavigateToDiscover = {
+                                    scope.launch {
+                                        pagerState.animateScrollToPage(0)
+                                    }
+                                }
                             )
                         }
                     }
