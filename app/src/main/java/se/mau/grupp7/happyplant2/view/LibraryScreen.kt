@@ -7,12 +7,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -48,6 +54,9 @@ import coil.compose.AsyncImage
 import se.mau.grupp7.happyplant2.R
 import se.mau.grupp7.happyplant2.model.SortOption
 import se.mau.grupp7.happyplant2.model.UserPlant
+
+private val iconSize = 100.dp
+private val gridSpacing = 16.dp
 
 @Composable
 fun LibraryScreen(
@@ -130,17 +139,24 @@ fun LibraryScreen(
 
                             if (isExpanded) {
                                 val chunkedPlants = plantsForCategory.chunked(3)
+
                                 Column(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalAlignment = Alignment.CenterHorizontally
+                                    verticalArrangement = Arrangement.spacedBy(gridSpacing),
+                                    modifier = Modifier
+                                        .padding(vertical = 8.dp)
                                 ) {
                                     chunkedPlants.forEach { rowPlants ->
                                         Row(
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                            modifier = Modifier.padding(vertical = 4.dp)
+                                            horizontalArrangement = Arrangement.spacedBy(gridSpacing),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 16.dp),
+                                            verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             rowPlants.forEach { plant ->
-                                                UserPlantCard(plant, navController)
+                                                Box(modifier = Modifier.size(iconSize)) {
+                                                    UserPlantCard(plant, navController)
+                                                }
                                             }
                                         }
                                     }
@@ -153,19 +169,23 @@ fun LibraryScreen(
                 if (unassignedPlants.isNotEmpty()) {
                     item {
                         val chunkedPlants = unassignedPlants.chunked(3)
+
                         Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                            verticalArrangement = Arrangement.spacedBy(gridSpacing),
+                            modifier = Modifier.padding(vertical = 8.dp)
                         ) {
                             chunkedPlants.forEach { rowPlants ->
                                 Row(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    modifier = Modifier.padding(vertical = 4.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(gridSpacing),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 24.dp),
+                                verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     rowPlants.forEach { plant ->
-                                        UserPlantCard(plant, navController)
+                                        Box(modifier = Modifier.size(iconSize)) {
+                                            UserPlantCard(plant, navController)
+                                        }
                                     }
                                 }
                             }
@@ -248,9 +268,7 @@ fun SortDropdown(sortOption: SortOption, onSortOptionSelected: (SortOption) -> U
 fun UserPlantCard(userPlant: UserPlant, navController: NavHostController) {
     IconButton(
         onClick = { navController.navigate("plantDetails/${userPlant.id}") },
-        modifier = Modifier
-            .size(90.dp)
-            .padding(8.dp)
+        modifier = Modifier.fillMaxSize()
     ) {
         AsyncImage(
             model = userPlant.localImageUri

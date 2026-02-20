@@ -29,9 +29,20 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
                 emptyList()
             )
 
-    private val _categories = MutableStateFlow<List<String>>(emptyList())
-    val categories: StateFlow<List<String>> = _categories
-
+    val categories: StateFlow<List<String>> =
+        userPlants
+            .map { plants ->
+                plants
+                    .map { it.category.trim() }
+                    .filter { it.isNotBlank() }
+                    .distinct()
+                    .sorted()
+            }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5000),
+                emptyList()
+            )
     private val popularPlants = listOf("rosa", "rose", "lavender", "monstera")
 
     private val _suggestions = MutableStateFlow<List<String>>(emptyList())
@@ -305,14 +316,4 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
                 SharingStarted.WhileSubscribed(5000),
                 100
             )
-
-    fun addCategoryIfNotExists(category: String) {
-        val trimmed = category.trim()
-
-        if (trimmed.isNotEmpty()
-            && trimmed !in _categories.value
-        ) {
-            _categories.value += trimmed
-        }
-    }
 }
