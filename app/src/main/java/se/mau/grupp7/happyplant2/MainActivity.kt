@@ -68,6 +68,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Tab
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import coil.compose.AsyncImage
@@ -81,7 +83,10 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material3.TabRow
 
+enum class SearchMode {PLANTS, DIAGNOSES}
 class MainActivity : ComponentActivity() {
     private val viewModel: PlantViewModel by viewModels()
 
@@ -170,7 +175,7 @@ fun MainScreen(viewModel: PlantViewModel) {
                     when (page) {
 
                         0 -> {
-                            PlantDiscoverScreen(
+                            DiscoverSearchScreen(
                                 plantTypes = plantList,
                                 suggestions = suggestions,
                                 onSearch = { query ->
@@ -406,6 +411,74 @@ fun BonsaiScreen(viewModel: PlantViewModel) {
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .padding(top = 80.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun DiscoverSearchScreen(
+    plantTypes: List<PlantDetails>,
+    suggestions: List<String>,
+    onSearch: (String) -> Unit,
+    onAdd: (PlantDetails) -> Unit
+) {
+    var mode by rememberSaveable { mutableStateOf(SearchMode.PLANTS) }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+
+        SearchModeTabs(mode = mode, onModeChange = { mode = it })
+
+        when (mode) {
+            SearchMode.PLANTS -> PlantDiscoverScreen(
+                plantTypes = plantTypes,
+                suggestions = suggestions,
+                onSearch = onSearch,
+                onAdd = onAdd
+            )
+
+            SearchMode.DIAGNOSES -> DiagnosesPlaceholder()
+        }
+    }
+}
+
+@Composable
+private fun SearchModeTabs(
+    mode: SearchMode,
+    onModeChange: (SearchMode) -> Unit
+) {
+    TabRow(selectedTabIndex = if (mode == SearchMode.PLANTS) 0 else 1) {
+        Tab(
+            selected = mode == SearchMode.PLANTS,
+            onClick = { onModeChange(SearchMode.PLANTS) },
+            text = { Text("Plants") }
+        )
+        Tab(
+            selected = mode == SearchMode.DIAGNOSES,
+            onClick = { onModeChange(SearchMode.DIAGNOSES) },
+            text = { Text("Diagnoses") }
+        )
+    }
+}
+
+@Composable
+private fun DiagnosesPlaceholder() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Diagnoses",
+                style = MaterialTheme.typography.titleLarge
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Den här funktionen är inte implementerad ännu.",
+                style = MaterialTheme.typography.bodyMedium
             )
         }
     }
