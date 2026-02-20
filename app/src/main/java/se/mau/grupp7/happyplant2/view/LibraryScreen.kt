@@ -61,10 +61,15 @@ import se.mau.grupp7.happyplant2.model.SortOption
 import se.mau.grupp7.happyplant2.model.UserPlant
 import android.content.ClipData
 import android.content.ClipDescription
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.key
+import androidx.compose.foundation.lazy.grid.items
 
-private val iconSize = 100.dp
 private val gridSpacing = 16.dp
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -186,30 +191,24 @@ fun LibraryScreen(
                                 tint = Color.White
                             )
                         }
-
                         if (isExpanded) {
-                            val chunkedPlants = plantsForCategory.chunked(3)
-
-                            Column(
+                            LazyVerticalGrid( //bad implementation, this grid should contain the whole page.
+                                columns = GridCells.Fixed(3),
+                                horizontalArrangement = Arrangement.spacedBy(gridSpacing),
                                 verticalArrangement = Arrangement.spacedBy(gridSpacing),
-                                modifier = Modifier.padding(vertical = 8.dp)
-                            ) {
-                                chunkedPlants.forEach { rowPlants ->
-                                    Row(
-                                        horizontalArrangement = Arrangement.spacedBy(gridSpacing),
+                                userScrollEnabled = false, //forces bad impl to work
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 10000.dp) //forces bad impl to work
+                                    .padding(all = 16.dp)                            ) {
+                                items(plantsForCategory, key = { it.id }) { plant ->
+                                    UserPlantCard(
+                                        userPlant = plant,
+                                        navController = navController,
                                         modifier = Modifier
+                                            .aspectRatio(1f)
                                             .fillMaxWidth()
-                                            .padding(horizontal = 16.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        rowPlants.forEach { plant ->
-                                            key(plant.id) {  // Stabilize each plant card
-                                                Box(modifier = Modifier.size(iconSize)) {
-                                                    UserPlantCard(plant, navController)
-                                                }
-                                            }
-                                        }
-                                    }
+                                    )
                                 }
                             }
                         }
@@ -289,11 +288,14 @@ fun SortDropdown(sortOption: SortOption, onSortOptionSelected: (SortOption) -> U
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun UserPlantCard(userPlant: UserPlant, navController: NavHostController) {
+fun UserPlantCard(
+    userPlant: UserPlant,
+    navController: NavHostController,
+    modifier: Modifier = Modifier
+) {
     IconButton(
         onClick = { navController.navigate("plantDetails/${userPlant.id}") },
-        modifier = Modifier
-            .fillMaxSize()
+        modifier = modifier
             .dragAndDropSource(block = {
                 detectDragGesturesAfterLongPress(
                     onDragStart = {
