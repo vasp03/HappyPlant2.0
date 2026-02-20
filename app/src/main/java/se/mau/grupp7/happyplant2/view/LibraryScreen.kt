@@ -1,24 +1,20 @@
 package se.mau.grupp7.happyplant2.view
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -44,27 +40,49 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.draganddrop.DragAndDropEvent
+import androidx.compose.ui.draganddrop.DragAndDropTarget
+import androidx.compose.ui.draganddrop.DragAndDropTransferData
+import androidx.compose.ui.draganddrop.mimeTypes
+import androidx.compose.ui.draganddrop.toAndroidDragEvent
+import androidx.compose.foundation.draganddrop.dragAndDropSource
+import androidx.compose.foundation.draganddrop.dragAndDropTarget
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import se.mau.grupp7.happyplant2.R
 import se.mau.grupp7.happyplant2.model.SortOption
 import se.mau.grupp7.happyplant2.model.UserPlant
+import android.content.ClipData
+import android.content.ClipDescription
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.key
 
 private val iconSize = 100.dp
 private val gridSpacing = 16.dp
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun LibraryScreen(
     userPlantList: List<UserPlant>,
     navController: NavHostController,
-    onNavigateToDiscover: () -> Unit
+    onNavigateToDiscover: () -> Unit,
+    onUpdateCategory: (UserPlant, String) -> Unit
 ) {
     var sortOption by remember { mutableStateOf(SortOption.CommonNameAZ) }
+
+    val currentUserPlants = remember { mutableStateOf(userPlantList) }
+
+    // Update the mutable state on every recomposition so its always current.
+    SideEffect {
+        currentUserPlants.value = userPlantList
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -86,12 +104,8 @@ fun LibraryScreen(
                 SortOption.NeedOfWaterLeast -> userPlantList.sortedByDescending { it.lastTimeWatered }
             }
 
-            val unassignedPlants = sortedList.filter { it.category.isEmpty() }
-            val categorizedPlants = sortedList
-                .filter { it.category.isNotEmpty() }
-                .groupBy { it.category }
-
-            val displayCategories = categorizedPlants.keys.sorted()
+            val categoryMap = sortedList.groupBy { if (it.category.isEmpty()) "Unassigned" else it.category }
+            val displayCategories = (categoryMap.keys + "Unassigned").distinct().sortedBy { if (it == "Unassigned") "\uffff" else it }  // Puts "Unassigned" at the end
 
             var expandedCategories by remember(displayCategories) { mutableStateOf(displayCategories.toSet()) }
 
@@ -99,92 +113,101 @@ fun LibraryScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(bottom = 96.dp)
             ) {
-                displayCategories.forEach { category ->
-                    val plantsForCategory = categorizedPlants[category] ?: emptyList()
+                items(
+                    items = displayCategories,
+                    key = { it }
+                ) { category ->
+                    val plantsForCategory = categoryMap.getOrDefault(category, emptyList())
+                    val isExpanded = category in expandedCategories
 
-                    item {
-                        val isExpanded = category in expandedCategories
-                        Column(
-                            modifier = Modifier
-                                .padding(vertical = 8.dp)
-                                .background(Color(0xFF2C2A4A), shape = RoundedCornerShape(8.dp))
-                                .padding(8.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        expandedCategories = if (isExpanded) {
-                                            expandedCategories - category
-                                        } else {
-                                            expandedCategories + category
+                    var isDragOver by remember { mutableStateOf(false) }
+
+                    Column(
+                        modifier = Modifier
+                            .padding(vertical = 8.dp)
+                            .background(if (isDragOver) Color(0xFF4CAF50).copy(alpha = 0.3f) else Color(0xFF2C2A4A), shape = RoundedCornerShape(8.dp))
+                            .padding(8.dp)
+                            .dragAndDropTarget(
+                                shouldStartDragAndDrop = { event ->
+                                    event.mimeTypes().contains(ClipDescription.MIMETYPE_TEXT_PLAIN)
+                                },
+                                target = remember {
+                                    object : DragAndDropTarget {
+                                        override fun onEntered(event: DragAndDropEvent) {
+                                            isDragOver = true
+                                        }
+
+                                        override fun onExited(event: DragAndDropEvent) {
+                                            isDragOver = false
+                                        }
+
+                                        override fun onDrop(event: DragAndDropEvent): Boolean {
+                                            isDragOver = false
+                                            val clipData = event.toAndroidDragEvent().clipData
+                                            val idStr = clipData?.getItemAt(0)?.text?.toString() ?: return false
+                                            val plant = currentUserPlants.value.find { it.id == idStr } ?: return false
+                                            val newCategory = if (category == "Unassigned") "" else category
+                                            if (plant.category != newCategory) {
+                                                onUpdateCategory(plant, newCategory)
+                                            }
+                                            return true
+                                        }
+
+                                        override fun onEnded(event: DragAndDropEvent) {
+                                            isDragOver = false
                                         }
                                     }
-                                    .padding(8.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                }
+                            )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    expandedCategories = if (isExpanded) {
+                                        expandedCategories - category
+                                    } else {
+                                        expandedCategories + category
+                                    }
+                                }
+                                .padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "$category (${plantsForCategory.size})",
+                                color = Color.White,
+                                fontStyle = FontStyle.Italic,
+                                style = MaterialTheme.typography.headlineSmall,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Icon(
+                                imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                contentDescription = if (isExpanded) "Collapse" else "Expand",
+                                tint = Color.White
+                            )
+                        }
+
+                        if (isExpanded) {
+                            val chunkedPlants = plantsForCategory.chunked(3)
+
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(gridSpacing),
+                                modifier = Modifier.padding(vertical = 8.dp)
                             ) {
-                                Text(
-                                    text = "$category (${plantsForCategory.size})",
-                                    color = Color.White,
-                                    fontStyle = FontStyle.Italic,
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                Icon(
-                                    imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                                    contentDescription = if (isExpanded) "Collapse" else "Expand",
-                                    tint = Color.White
-                                )
-                            }
-
-                            if (isExpanded) {
-                                val chunkedPlants = plantsForCategory.chunked(3)
-
-                                Column(
-                                    verticalArrangement = Arrangement.spacedBy(gridSpacing),
-                                    modifier = Modifier
-                                        .padding(vertical = 8.dp)
-                                ) {
-                                    chunkedPlants.forEach { rowPlants ->
-                                        Row(
-                                            horizontalArrangement = Arrangement.spacedBy(gridSpacing),
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(horizontal = 16.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            rowPlants.forEach { plant ->
+                                chunkedPlants.forEach { rowPlants ->
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(gridSpacing),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 16.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        rowPlants.forEach { plant ->
+                                            key(plant.id) {  // Stabilize each plant card
                                                 Box(modifier = Modifier.size(iconSize)) {
                                                     UserPlantCard(plant, navController)
                                                 }
                                             }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (unassignedPlants.isNotEmpty()) {
-                    item {
-                        val chunkedPlants = unassignedPlants.chunked(3)
-
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(gridSpacing),
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        ) {
-                            chunkedPlants.forEach { rowPlants ->
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(gridSpacing),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 24.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    rowPlants.forEach { plant ->
-                                        Box(modifier = Modifier.size(iconSize)) {
-                                            UserPlantCard(plant, navController)
                                         }
                                     }
                                 }
@@ -264,15 +287,32 @@ fun SortDropdown(sortOption: SortOption, onSortOptionSelected: (SortOption) -> U
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun UserPlantCard(userPlant: UserPlant, navController: NavHostController) {
     IconButton(
         onClick = { navController.navigate("plantDetails/${userPlant.id}") },
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .dragAndDropSource(block = {
+                detectDragGesturesAfterLongPress(
+                    onDragStart = {
+                        startTransfer(
+                            DragAndDropTransferData(
+                                ClipData.newPlainText("plant", userPlant.id)
+                            )
+                        )
+                    },
+                    onDrag = { change: PointerInputChange, dragAmount: Offset ->
+                        change.consume()
+                    },
+                    onDragCancel = {},
+                    onDragEnd = {}
+                )
+            })
     ) {
         AsyncImage(
-            model = userPlant.localImageUri
-                ?: userPlant.imageURL.takeIf { it.isNotBlank() },
+            model = userPlant.localImageUri ?: userPlant.imageURL.takeIf { it.isNotBlank() },
             contentDescription = userPlant.name,
             modifier = Modifier
                 .fillMaxSize()

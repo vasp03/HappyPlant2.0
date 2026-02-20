@@ -203,6 +203,9 @@ fun MainScreen(viewModel: PlantViewModel) {
                                     scope.launch {
                                         pagerState.animateScrollToPage(0)
                                     }
+                                },
+                                onUpdateCategory = { plant, newCategory ->
+                                    viewModel.updatePlantCategory(plant, newCategory)
                                 }
                             )
                         }
