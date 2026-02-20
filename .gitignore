@@ -222,3 +222,6 @@ UsabilityTestProgram.class
 /.idea
 local.properties
 /.gradle
+
+# Gradle build outputs
+/build/
