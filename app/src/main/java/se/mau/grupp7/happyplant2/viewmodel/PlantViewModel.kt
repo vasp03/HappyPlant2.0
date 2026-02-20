@@ -3,7 +3,6 @@ package se.mau.grupp7.happyplant2.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import android.util.Log
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
