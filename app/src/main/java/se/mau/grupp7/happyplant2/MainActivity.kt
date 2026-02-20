@@ -597,7 +597,6 @@ fun DefaultPreview() {
                 )
             ),
             suggestions = emptyList(),
-            suggestions = listOf(),
             onSearch = {},
             onAdd = {} as (PlantDetails, Int) -> Unit
         )
