@@ -68,6 +68,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
 import androidx.compose.runtime.rememberCoroutineScope
@@ -424,6 +426,65 @@ fun DiscoverSearchScreen(
     onAdd: (PlantDetails) -> Unit
 ) {
     var mode by rememberSaveable { mutableStateOf(SearchMode.PLANTS) }
+    var text by rememberSaveable { mutableStateOf("") }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+
+        // 1) Sökfält högst upp
+        TextField(
+            value = text,
+            onValueChange = { text = it },
+            placeholder = {
+                Text(if (mode == SearchMode.PLANTS) "Search for plants" else "Search diagnoses")
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            trailingIcon = {
+                IconButton(onClick = { onSearch(text) }) {
+                    Icon(Icons.Filled.Search, contentDescription = "Search")
+                }
+            },
+            singleLine = true
+        )
+
+        // 2) Tabs DIREKT under sökfältet
+        SearchModePills(
+            mode = mode,
+            onModeChange = { mode = it },
+            //modifier = Modifier.padding(horizontal = 16.dp)
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // 3) Resten av ytan
+        Box(modifier = Modifier.weight(1f)) {
+            when (mode) {
+                SearchMode.PLANTS -> PlantDiscoverContent(
+                    plantTypes = plantTypes,
+                    suggestions = suggestions,
+                    onSuggestionClick = { s ->
+                        text = s
+                        onSearch(s)
+                    },
+                    onAdd = onAdd
+                )
+
+                SearchMode.DIAGNOSES -> DiagnosesPlaceholder()
+            }
+        }
+    }
+}
+
+/*
+@Composable
+fun DiscoverSearchScreen(
+    plantTypes: List<PlantDetails>,
+    suggestions: List<String>,
+    onSearch: (String) -> Unit,
+    onAdd: (PlantDetails) -> Unit
+) {
+    var mode by rememberSaveable { mutableStateOf(SearchMode.PLANTS) }
 
     Column(modifier = Modifier.fillMaxSize()) {
 
@@ -438,6 +499,50 @@ fun DiscoverSearchScreen(
             )
 
             SearchMode.DIAGNOSES -> DiagnosesPlaceholder()
+        }
+    }
+}
+
+ */
+
+@Composable
+private fun SearchModePills(
+    mode: SearchMode,
+    onModeChange: (SearchMode) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+
+        val isPlants = mode == SearchMode.PLANTS
+
+        Button(
+            onClick = { onModeChange(SearchMode.PLANTS) },
+            modifier = Modifier.weight(1f),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (isPlants)
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            Text("Plants")
+        }
+
+        Button(
+            onClick = { onModeChange(SearchMode.DIAGNOSES) },
+            modifier = Modifier.weight(1f),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (!isPlants)
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            Text("Diagnoses")
         }
     }
 }
@@ -483,7 +588,49 @@ private fun DiagnosesPlaceholder() {
         }
     }
 }
+@Composable
+fun PlantDiscoverContent(
+    plantTypes: List<PlantDetails>,
+    suggestions: List<String>,
+    onSuggestionClick: (String) -> Unit,
+    onAdd: (PlantDetails) -> Unit
+) {
+    Column(modifier = Modifier.fillMaxSize()) {
 
+        if (suggestions.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Did you mean:",
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                suggestions.forEach { s ->
+                    Button(onClick = { onSuggestionClick(s) }) {
+                        Text(s)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            contentPadding = PaddingValues(8.dp),
+            modifier = Modifier.weight(1f)
+        ) {
+            items(plantTypes) { plantType ->
+                PlantCard(plantType, onAdd = { onAdd(plantType) })
+            }
+        }
+    }
+}
 @Composable
 fun PlantDiscoverScreen(
     plantTypes: List<PlantDetails>,
