@@ -62,7 +62,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -533,6 +532,7 @@ fun DefaultPreview() {
                     imageUrl = ""
                 )
             ),
+            suggestions = listOf(),
             onSearch = {},
             onAdd = {}
         )

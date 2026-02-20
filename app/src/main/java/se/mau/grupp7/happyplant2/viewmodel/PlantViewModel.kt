@@ -3,7 +3,6 @@ package se.mau.grupp7.happyplant2.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import android.util.Log
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -255,22 +254,6 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
             .take(5)
             .map { it.first }
     }
-
-    val overallHealthPercentage: StateFlow<Int> =
-        _userPlants.map { plants ->
-
-            if (plants.isEmpty()) return@map 100
-
-            val totalHealth = plants.sumOf { it.healthStatus }
-            val maxHealth = plants.size * 5
-
-            ((totalHealth.toFloat() / maxHealth) * 100).toInt()
-
-        }.stateIn(
-            viewModelScope,
-            SharingStarted.WhileSubscribed(5000),
-            100
-        )
 
     fun updatePlantDetails(
         plant: UserPlant,
