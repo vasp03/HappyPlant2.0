@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -519,28 +520,28 @@ private fun SearchModePills(
 
         val isPlants = mode == SearchMode.PLANTS
 
+        // PLANTS BUTTON
         Button(
             onClick = { onModeChange(SearchMode.PLANTS) },
             modifier = Modifier.weight(1f),
             colors = ButtonDefaults.buttonColors(
-                containerColor = if (isPlants)
-                    MaterialTheme.colorScheme.primary
-                else
-                    MaterialTheme.colorScheme.surfaceVariant
-            )
+                containerColor = if (isPlants) Color.White else Color(0xFF3F51B5),
+                contentColor = if (isPlants) Color.Black else Color.White
+            ),
+            border = if (isPlants) BorderStroke(1.dp, Color.Black) else null
         ) {
             Text("Plants")
         }
 
+        // DIAGNOSES BUTTON
         Button(
             onClick = { onModeChange(SearchMode.DIAGNOSES) },
             modifier = Modifier.weight(1f),
             colors = ButtonDefaults.buttonColors(
-                containerColor = if (!isPlants)
-                    MaterialTheme.colorScheme.primary
-                else
-                    MaterialTheme.colorScheme.surfaceVariant
-            )
+                containerColor = if (!isPlants) Color.White else Color(0xFF3F51B5),
+                contentColor = if (!isPlants) Color.Black else Color.White
+            ),
+            border = if (!isPlants) BorderStroke(1.dp, Color.Black) else null
         ) {
             Text("Diagnoses")
         }
