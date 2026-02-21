@@ -70,9 +70,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Tab
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import coil.compose.AsyncImage
@@ -87,7 +85,9 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.material3.TabRow
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 
 enum class SearchMode {PLANTS, DIAGNOSES}
 class MainActivity : ComponentActivity() {
@@ -431,7 +431,6 @@ fun DiscoverSearchScreen(
 
     Column(modifier = Modifier.fillMaxSize()) {
 
-        // 1) Sökfält högst upp
         TextField(
             value = text,
             onValueChange = { text = it },
@@ -446,19 +445,20 @@ fun DiscoverSearchScreen(
                     Icon(Icons.Filled.Search, contentDescription = "Search")
                 }
             },
-            singleLine = true
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardActions = KeyboardActions(
+                onSearch = { onSearch(text) }
+            ),
         )
 
-        // 2) Tabs DIREKT under sökfältet
         SearchModePills(
             mode = mode,
             onModeChange = { mode = it },
-            //modifier = Modifier.padding(horizontal = 16.dp)
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // 3) Resten av ytan
         Box(modifier = Modifier.weight(1f)) {
             when (mode) {
                 SearchMode.PLANTS -> PlantDiscoverContent(
@@ -476,35 +476,6 @@ fun DiscoverSearchScreen(
         }
     }
 }
-
-/*
-@Composable
-fun DiscoverSearchScreen(
-    plantTypes: List<PlantDetails>,
-    suggestions: List<String>,
-    onSearch: (String) -> Unit,
-    onAdd: (PlantDetails) -> Unit
-) {
-    var mode by rememberSaveable { mutableStateOf(SearchMode.PLANTS) }
-
-    Column(modifier = Modifier.fillMaxSize()) {
-
-        SearchModeTabs(mode = mode, onModeChange = { mode = it })
-
-        when (mode) {
-            SearchMode.PLANTS -> PlantDiscoverScreen(
-                plantTypes = plantTypes,
-                suggestions = suggestions,
-                onSearch = onSearch,
-                onAdd = onAdd
-            )
-
-            SearchMode.DIAGNOSES -> DiagnosesPlaceholder()
-        }
-    }
-}
-
- */
 
 @Composable
 private fun SearchModePills(
@@ -548,24 +519,6 @@ private fun SearchModePills(
     }
 }
 
-@Composable
-private fun SearchModeTabs(
-    mode: SearchMode,
-    onModeChange: (SearchMode) -> Unit
-) {
-    TabRow(selectedTabIndex = if (mode == SearchMode.PLANTS) 0 else 1) {
-        Tab(
-            selected = mode == SearchMode.PLANTS,
-            onClick = { onModeChange(SearchMode.PLANTS) },
-            text = { Text("Plants") }
-        )
-        Tab(
-            selected = mode == SearchMode.DIAGNOSES,
-            onClick = { onModeChange(SearchMode.DIAGNOSES) },
-            text = { Text("Diagnoses") }
-        )
-    }
-}
 
 @Composable
 private fun DiagnosesPlaceholder() {
@@ -602,6 +555,7 @@ fun PlantDiscoverContent(
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "Did you mean:",
+                color = Color.White,
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
 
