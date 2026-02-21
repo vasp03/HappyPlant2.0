@@ -90,6 +90,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 
 enum class SearchMode {PLANTS, DIAGNOSES}
 class MainActivity : ComponentActivity() {
@@ -434,7 +435,7 @@ fun DiscoverSearchScreen(
     plantTypes: List<PlantDetails>,
     suggestions: List<String>,
     onSearch: (String) -> Unit,
-    onAdd: (PlantDetails) -> Unit
+    onAdd: (PlantDetails, Int) -> Unit
 ) {
     var mode by rememberSaveable { mutableStateOf(SearchMode.PLANTS) }
     var text by rememberSaveable { mutableStateOf("") }
@@ -478,12 +479,15 @@ fun DiscoverSearchScreen(
                         text = s
                         onSearch(s)
                     },
-                    onAdd = onAdd
+                    onAdd = { plant, days ->
+                        onAdd(plant, days)
+                    }
                 )
 
                 SearchMode.DIAGNOSES -> DiagnosesPlaceholder()
             }
         }
+
     }
 }
 
@@ -557,8 +561,12 @@ fun PlantDiscoverContent(
     plantTypes: List<PlantDetails>,
     suggestions: List<String>,
     onSuggestionClick: (String) -> Unit,
-    onAdd: (PlantDetails) -> Unit
+    onAdd: (PlantDetails, Int) -> Unit
 ) {
+    var showDialog by remember { mutableStateOf(false) }
+    var selectedPlant by remember { mutableStateOf<PlantDetails?>(null) }
+    var daysAgoText by remember { mutableStateOf("0") }
+
     Column(modifier = Modifier.fillMaxSize()) {
 
         if (suggestions.isNotEmpty()) {
@@ -591,82 +599,22 @@ fun PlantDiscoverContent(
             modifier = Modifier.weight(1f)
         ) {
             items(plantTypes) { plantType ->
-                PlantCard(plantType, onAdd = { onAdd(plantType) })
-            }
-        }
-    }
-}
-@Composable
-fun PlantDiscoverScreen(
-    plantTypes: List<PlantDetails>,
-    suggestions: List<String>,
-    onSearch: (String) -> Unit,
-    onAdd: (PlantDetails, Int) -> Unit
-) {
-    var text by remember { mutableStateOf("") }
-    var showDialog by remember { mutableStateOf(false) }
-    var selectedPlant by remember { mutableStateOf<PlantDetails?>(null) }
-    var daysAgoText by remember { mutableStateOf("0") }
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        TextField(
-            value = text,
-            onValueChange = { text = it },
-            placeholder = { Text("Search for plants") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            trailingIcon = {
-                IconButton(onClick = { onSearch(text) }) {
-                    Icon(Icons.Filled.Search, contentDescription = "Search")
-                }
-            }
-        )
-
-        if (suggestions.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(text = "Did you mean:")
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            Row {
-                suggestions.forEach { s ->
-                    Button(
-                        onClick = {
-                            text = s
-                            onSearch(s) }
-                    ) {
-                        Text(s)
+                PlantCard(
+                    plantType,
+                    onAdd = {
+                        selectedPlant = plantType
+                        daysAgoText = "0"
+                        showDialog = true
                     }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(8.dp),
-            modifier = Modifier.weight(1f)
-        ) {
-            items(plantTypes) { plantType ->
-                PlantCard(plantType, onAdd = {
-                    selectedPlant = plantType
-                    daysAgoText = "0"
-                    showDialog = true
-                })
+                )
             }
         }
 
         if (showDialog && selectedPlant != null) {
 
             AlertDialog(
-                onDismissRequest = {
-                    showDialog = false
-                },
-                title = {
-                    Text("When was it last watered?")
-                },
+                onDismissRequest = { showDialog = false },
+                title = { Text("When was it last watered?") },
                 text = {
                     Column {
                         Text("Enter number of days ago (0 = today)")
@@ -678,7 +626,10 @@ fun PlantDiscoverScreen(
                                     daysAgoText = it
                                 }
                             },
-                            singleLine = true
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number
+                            )
                         )
                     }
                 },
@@ -695,16 +646,13 @@ fun PlantDiscoverScreen(
                 },
                 dismissButton = {
                     TextButton(
-                        onClick = {
-                            showDialog = false
-                        }
+                        onClick = { showDialog = false }
                     ) {
                         Text("Cancel")
                     }
                 }
             )
         }
-
     }
 }
 
@@ -752,7 +700,7 @@ fun PlantCard(plantDetails: PlantDetails, onAdd: (PlantDetails) -> Unit) {
 @Composable
 fun DefaultPreview() {
     HappyPlant2Theme {
-        PlantDiscoverScreen(
+        DiscoverSearchScreen(
             plantTypes = listOf(
                 PlantDetails(
                     id = 1,
@@ -771,9 +719,9 @@ fun DefaultPreview() {
                     imageUrl = ""
                 )
             ),
-            suggestions = emptyList(),
+            suggestions = listOf("Monstera", "Ficus"),
             onSearch = {},
-            onAdd = {} as (PlantDetails, Int) -> Unit
+            onAdd = { _, _ -> }
         )
     }
 }
