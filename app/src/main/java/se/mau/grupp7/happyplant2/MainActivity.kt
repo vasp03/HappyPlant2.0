@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -68,6 +69,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.rememberCoroutineScope
@@ -83,7 +86,12 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 
+enum class SearchMode {PLANTS, DIAGNOSES}
 class MainActivity : ComponentActivity() {
     private val viewModel: PlantViewModel by viewModels()
 
@@ -172,7 +180,7 @@ fun MainScreen(viewModel: PlantViewModel) {
                     when (page) {
 
                         0 -> {
-                            PlantDiscoverScreen(
+                            DiscoverSearchScreen(
                                 plantTypes = plantList,
                                 suggestions = suggestions,
                                 onSearch = { query ->
@@ -421,6 +429,173 @@ fun BonsaiScreen(viewModel: PlantViewModel) {
     }
 }
 
+@Composable
+fun DiscoverSearchScreen(
+    plantTypes: List<PlantDetails>,
+    suggestions: List<String>,
+    onSearch: (String) -> Unit,
+    onAdd: (PlantDetails) -> Unit
+) {
+    var mode by rememberSaveable { mutableStateOf(SearchMode.PLANTS) }
+    var text by rememberSaveable { mutableStateOf("") }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+
+        TextField(
+            value = text,
+            onValueChange = { text = it },
+            placeholder = {
+                Text(if (mode == SearchMode.PLANTS) "Search for plants" else "Search diagnoses")
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            trailingIcon = {
+                IconButton(onClick = { onSearch(text) }) {
+                    Icon(Icons.Filled.Search, contentDescription = "Search")
+                }
+            },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardActions = KeyboardActions(
+                onSearch = { onSearch(text) }
+            ),
+        )
+
+        SearchModePills(
+            mode = mode,
+            onModeChange = { mode = it },
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Box(modifier = Modifier.weight(1f)) {
+            when (mode) {
+                SearchMode.PLANTS -> PlantDiscoverContent(
+                    plantTypes = plantTypes,
+                    suggestions = suggestions,
+                    onSuggestionClick = { s ->
+                        text = s
+                        onSearch(s)
+                    },
+                    onAdd = onAdd
+                )
+
+                SearchMode.DIAGNOSES -> DiagnosesPlaceholder()
+            }
+        }
+    }
+}
+
+@Composable
+private fun SearchModePills(
+    mode: SearchMode,
+    onModeChange: (SearchMode) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+
+        val isPlants = mode == SearchMode.PLANTS
+
+        // PLANTS BUTTON
+        Button(
+            onClick = { onModeChange(SearchMode.PLANTS) },
+            modifier = Modifier.weight(1f),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (isPlants) Color.White else Color(0xFF3F51B5),
+                contentColor = if (isPlants) Color.Black else Color.White
+            ),
+            border = if (isPlants) BorderStroke(1.dp, Color.Black) else null
+        ) {
+            Text("Plants")
+        }
+
+        // DIAGNOSES BUTTON
+        Button(
+            onClick = { onModeChange(SearchMode.DIAGNOSES) },
+            modifier = Modifier.weight(1f),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (!isPlants) Color.White else Color(0xFF3F51B5),
+                contentColor = if (!isPlants) Color.Black else Color.White
+            ),
+            border = if (!isPlants) BorderStroke(1.dp, Color.Black) else null
+        ) {
+            Text("Diagnoses")
+        }
+    }
+}
+
+
+@Composable
+private fun DiagnosesPlaceholder() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Diagnoses",
+                style = MaterialTheme.typography.titleLarge
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Den här funktionen är inte implementerad ännu.",
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+    }
+}
+@Composable
+fun PlantDiscoverContent(
+    plantTypes: List<PlantDetails>,
+    suggestions: List<String>,
+    onSuggestionClick: (String) -> Unit,
+    onAdd: (PlantDetails) -> Unit
+) {
+    Column(modifier = Modifier.fillMaxSize()) {
+
+        if (suggestions.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Did you mean:",
+                color = Color.White,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                suggestions.forEach { s ->
+                    Button(onClick = { onSuggestionClick(s) }) {
+                        Text(s)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            contentPadding = PaddingValues(8.dp),
+            modifier = Modifier.weight(1f)
+        ) {
+            items(plantTypes) { plantType ->
+                PlantCard(plantType, onAdd = { onAdd(plantType) })
+            }
+        }
+    }
+}
 @Composable
 fun PlantDiscoverScreen(
     plantTypes: List<PlantDetails>,
