@@ -252,8 +252,6 @@ fun MainScreen(viewModel: PlantViewModel) {
                             viewModel.updatePlantImage(plant, uri)
                         },
 
-                        defectOptions = Defect.entries,
-
                         categories = categories,
 
                         onClose = {

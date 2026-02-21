@@ -23,6 +23,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import se.mau.grupp7.happyplant2.model.Defect
+import se.mau.grupp7.happyplant2.model.DefectList
 import se.mau.grupp7.happyplant2.model.UserPlant
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -37,7 +38,6 @@ fun PlantScreen(
     onDefectChange: (UserPlant, Defect) -> Unit,
     onDetailsChange: (UserPlant, String, String, String, String) -> Unit,
     onImageChange: (UserPlant, String) -> Unit,
-    defectOptions: List<Defect>,
     categories: List<String>,
     onClose: () -> Unit
 ) {
@@ -48,13 +48,16 @@ fun PlantScreen(
     }
 
     var categoryExpanded by remember { mutableStateOf(false) }
-    var selectedCategory by remember { mutableStateOf(plant.category.ifEmpty { "" }) }
+    var selectedPlantCategory by remember { mutableStateOf(plant.category.ifEmpty { "" }) }
+    var selectedDefectCategory by remember { mutableStateOf<String?>(null) }
+    var selectedDefectSubCategory by remember { mutableStateOf<String?>(null) }
     var defectExpanded by remember { mutableStateOf(false) }
-    var selectedDefect by remember { mutableStateOf(plant.defect) }
+    val currentDefect = DefectList.findById(plant.defectId)
     var customName by remember(plant.id) { mutableStateOf(plant.customName.ifEmpty { plant.name }) }
     var potType by remember(plant.id) { mutableStateOf(plant.potType) }
     var heightCm by remember(plant.id) { mutableStateOf(plant.heightCm) }
     var notes by remember(plant.id) { mutableStateOf(plant.notes) }
+
 
     val context = LocalContext.current
 
@@ -137,14 +140,14 @@ fun PlantScreen(
                 onExpandedChange = { categoryExpanded = !categoryExpanded }
             ) {
                 TextField(
-                    value = selectedCategory,
-                    onValueChange = { selectedCategory = it },
+                    value = selectedPlantCategory,
+                    onValueChange = { selectedPlantCategory = it },
                     label = { Text("Category (type to add new)") },
                     trailingIcon = {
                         Row {
                             IconButton(
                                 onClick = {
-                                    onCategoryChange(plant, selectedCategory)
+                                    onCategoryChange(plant, selectedPlantCategory)
                                     categoryExpanded = false
                                 }
                             ) {
@@ -169,7 +172,7 @@ fun PlantScreen(
                         DropdownMenuItem(
                             text = { Text(category) },
                             onClick = {
-                                selectedCategory = category
+                                selectedPlantCategory = category
                                 categoryExpanded = false
                                 onCategoryChange(plant, category)
                             }
@@ -185,7 +188,7 @@ fun PlantScreen(
                 onExpandedChange = { defectExpanded = !defectExpanded }
             ) {
                 TextField(
-                    value = selectedDefect.displayName,
+                    value = currentDefect.displayName,
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Defect") },
@@ -201,14 +204,57 @@ fun PlantScreen(
                     expanded = defectExpanded,
                     onDismissRequest = { defectExpanded = false }
                 ) {
-                    defectOptions.forEach { defect ->
-                        DropdownMenuItem(
-                            text = { Text(defect.displayName) },
-                            onClick = {
-                                selectedDefect = defect
-                                defectExpanded = false
-                                onDefectChange(plant, defect)
+
+                    if (selectedDefectCategory == null) {
+                        DefectList.categories.forEach { category ->
+                            DropdownMenuItem(
+                                text = { Text(category) },
+                                onClick = {
+                                    selectedDefectCategory = category
+                                }
+                            )
+                        }
+                    }
+
+                    else if (selectedDefectSubCategory == null) {
+                        DefectList.subCategories(selectedDefectCategory!!)
+                            .forEach { sub ->
+                                DropdownMenuItem(
+                                    text = { Text(sub) },
+                                    onClick = {
+                                        selectedDefectSubCategory = sub
+                                    }
+                                )
                             }
+
+                        DropdownMenuItem(
+                            text = { Text("← Back") },
+                            onClick = { selectedDefectCategory = null }
+                        )
+                    }
+
+                    else {
+                        DefectList
+                            .defects(selectedDefectCategory!!, selectedDefectSubCategory!!)
+                            .forEach { defect ->
+
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(defect.displayName)
+                                    },
+                                    onClick = {
+                                        onDefectChange(plant, defect)
+
+                                        selectedDefectCategory = null
+                                        selectedDefectSubCategory = null
+                                        defectExpanded = false
+                                    }
+                                )
+                            }
+
+                        DropdownMenuItem(
+                            text = { Text("← Back") },
+                            onClick = { selectedDefectSubCategory = null }
                         )
                     }
                 }

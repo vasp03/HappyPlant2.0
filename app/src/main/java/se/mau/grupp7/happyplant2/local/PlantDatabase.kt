@@ -5,21 +5,17 @@ import androidx.room.*
 import kotlinx.coroutines.flow.Flow
 import se.mau.grupp7.happyplant2.model.UserPlant
 import se.mau.grupp7.happyplant2.model.WaterAmount
-import se.mau.grupp7.happyplant2.model.Defect
 import java.util.Date
 
 class Converters {
+
     @TypeConverter fun fromWaterAmount(value: WaterAmount) = value.name
     @TypeConverter fun toWaterAmount(name: String) = WaterAmount.valueOf(name)
-
-    @TypeConverter fun fromDefect(value: Defect) = value.name
-    @TypeConverter fun toDefect(name: String) = Defect.valueOf(name)
-
     @TypeConverter fun fromDate(date: Date) = date.time
     @TypeConverter fun toDate(time: Long) = Date(time)
 }
 
-@Database(entities = [UserPlant::class], version = 1)
+@Database(entities = [UserPlant::class], version = 2)
 @TypeConverters(Converters::class)
 abstract class PlantDatabase : RoomDatabase() {
 
@@ -49,7 +45,9 @@ abstract class PlantDatabase : RoomDatabase() {
                     context.applicationContext,
                     PlantDatabase::class.java,
                     "plant_database"
-                ).build()
+                )
+                    .fallbackToDestructiveMigration(true)
+                    .build()
                 INSTANCE = instance
                 instance
             }

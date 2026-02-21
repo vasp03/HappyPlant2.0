@@ -20,7 +20,7 @@ data class UserPlant(
     val dateAdded: Date = Date(),
     var category: String = "",
     val healthStatus: Int = 5,
-    val defect: Defect = Defect.NONE,
+    val defectId: String = DefectList.NONE.id,
     val family: String = "",
     val sunlight: String = "",
     val wateringNeeds: String = "",
