@@ -196,6 +196,19 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun waterSelectedPlants(ids: List<String>) {
+        if (ids.isEmpty()) return
+
+        viewModelScope.launch {
+            val now = Date()
+            val toWater = userPlants.value.filter { it.id in ids }
+
+            toWater.forEach { plant ->
+                localRepository.update(plant.copy(lastTimeWatered = now))
+            }
+        }
+    }
+
     fun deleteUserPlant(plant: UserPlant) {
         viewModelScope.launch {
             localRepository.delete(plant)

@@ -38,6 +38,9 @@ abstract class PlantDatabase : RoomDatabase() {
 
         @Delete
         suspend fun deletePlant(plant: UserPlant)
+
+        @Query("UPDATE plants SET lastTimeWatered = :wateredAt WHERE id IN (:ids)")
+        suspend fun updateLastWateredForIds(ids: List<String>, wateredAt: Long)
     }
 
     companion object {

@@ -77,15 +77,20 @@ private val gridSpacing = 16.dp
 
 private const val DAY_MS = 24L * 60L * 60L * 1000L
 
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun LibraryScreen(
     userPlantList: List<UserPlant>,
     navController: NavHostController,
     onNavigateToDiscover: () -> Unit,
-    onUpdateCategory: (UserPlant, String) -> Unit
+    onUpdateCategory: (UserPlant, String) -> Unit,
+    onWaterSelected: (List<String>) -> Unit
 ) {
     var sortOption by remember { mutableStateOf(SortOption.CommonNameAZ) }
+
+    var isWaterSelectMode by remember { mutableStateOf(false) }
+    var selectedPlantIds by remember { mutableStateOf(setOf<String>()) } // dina id är String
 
     val currentUserPlants = remember { mutableStateOf(userPlantList) }
 
@@ -139,7 +144,7 @@ fun LibraryScreen(
                             .padding(8.dp)
                             .dragAndDropTarget(
                                 shouldStartDragAndDrop = { event ->
-                                    event.mimeTypes().contains(ClipDescription.MIMETYPE_TEXT_PLAIN)
+                                    !isWaterSelectMode && event.mimeTypes().contains(ClipDescription.MIMETYPE_TEXT_PLAIN)
                                 },
                                 target = remember {
                                     object : DragAndDropTarget {
@@ -207,9 +212,17 @@ fun LibraryScreen(
                                     .heightIn(max = 10000.dp) //forces bad impl to work
                                     .padding(all = 16.dp)                            ) {
                                 items(plantsForCategory, key = { it.id }) { plant ->
+                                    val isSelected = selectedPlantIds.contains(plant.id)
                                     UserPlantCard(
                                         userPlant = plant,
                                         navController = navController,
+                                        isSelectionMode = isWaterSelectMode,
+                                        isSelected = isSelected,
+                                        onToggleSelected = { id ->
+                                            selectedPlantIds =
+                                                if (selectedPlantIds.contains(id)) selectedPlantIds - id
+                                                else selectedPlantIds + id
+                                        },
                                         modifier = Modifier
                                             .aspectRatio(1f)
                                             .fillMaxWidth()
@@ -230,7 +243,16 @@ fun LibraryScreen(
         ) {
 
             FloatingActionButton(
-                onClick = { /* TODO: water-all logic */ },
+                onClick = { if (!isWaterSelectMode) {
+                    isWaterSelectMode = true
+                    selectedPlantIds = emptySet()
+                } else {
+                    if (selectedPlantIds.isNotEmpty()) {
+                        onWaterSelected(selectedPlantIds.toList())
+                    }
+                    isWaterSelectMode = false
+                    selectedPlantIds = emptySet()
+                }},
                 containerColor = Color(0xFF3A8DFF),
                 shape = CircleShape
             ) {
@@ -296,29 +318,38 @@ fun SortDropdown(sortOption: SortOption, onSortOptionSelected: (SortOption) -> U
 fun UserPlantCard(
     userPlant: UserPlant,
     navController: NavHostController,
+    isSelectionMode: Boolean,
+    isSelected: Boolean,
+    onToggleSelected: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val needsWater = needsWatering(userPlant.lastTimeWatered, userPlant.wateringInterval)
 
-    Box(modifier = modifier){
+    Box(modifier = modifier) {
+
         IconButton(
-            onClick = { navController.navigate("plantDetails/${userPlant.id}") },
+            onClick = {
+                if (isSelectionMode) onToggleSelected(userPlant.id)
+                else navController.navigate("plantDetails/${userPlant.id}")
+            },
             modifier = modifier
                 .dragAndDropSource(block = {
-                    detectDragGesturesAfterLongPress(
-                        onDragStart = {
-                            startTransfer(
-                                DragAndDropTransferData(
-                                    ClipData.newPlainText("plant", userPlant.id)
+                    if (!isSelectionMode) {
+                        detectDragGesturesAfterLongPress(
+                            onDragStart = {
+                                startTransfer(
+                                    DragAndDropTransferData(
+                                        ClipData.newPlainText("plant", userPlant.id)
+                                    )
                                 )
-                            )
-                        },
-                        onDrag = { change: PointerInputChange, dragAmount: Offset ->
-                            change.consume()
-                        },
-                        onDragCancel = {},
-                        onDragEnd = {}
-                    )
+                            },
+                            onDrag = { change: PointerInputChange, dragAmount: Offset ->
+                                change.consume()
+                            },
+                            onDragCancel = {},
+                            onDragEnd = {}
+                        )
+                    }
                 })
         ) {
             AsyncImage(
@@ -333,10 +364,21 @@ fun UserPlantCard(
                 fallback = painterResource(R.drawable.plant_placeholder)
             )
         }
+
         if (needsWater) {
             WaterDropOverlayIcon(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
+                    .padding(6.dp)
+            )
+        }
+
+        // Markeringsindikator: enkel, tydlig, “enterprise-grade”
+        if (isSelectionMode) {
+            SelectionBadge(
+                selected = isSelected,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
                     .padding(6.dp)
             )
         }
@@ -361,4 +403,15 @@ fun needsWatering(lastTimeWatered: Date, wateringIntervalDays: Int): Boolean {
     if (wateringIntervalDays <= 0) return false
     val nextWaterTime = lastTimeWatered.time + wateringIntervalDays * DAY_MS
     return System.currentTimeMillis() >= nextWaterTime
+}
+
+@Composable
+private fun SelectionBadge(selected: Boolean, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .size(18.dp)
+            .clip(CircleShape)
+            .background(if (selected) Color(0xFF4CAF50) else Color.White.copy(alpha = 0.85f))
+            .shadow(2.dp, CircleShape)
+    )
 }
