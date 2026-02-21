@@ -62,15 +62,20 @@ import se.mau.grupp7.happyplant2.model.UserPlant
 import android.content.ClipData
 import android.content.ClipDescription
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.key
 import androidx.compose.foundation.lazy.grid.items
+import java.util.Date
+import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.ui.draw.shadow
 
 private val gridSpacing = 16.dp
+
+private const val DAY_MS = 24L * 60L * 60L * 1000L
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -293,36 +298,67 @@ fun UserPlantCard(
     navController: NavHostController,
     modifier: Modifier = Modifier
 ) {
-    IconButton(
-        onClick = { navController.navigate("plantDetails/${userPlant.id}") },
-        modifier = modifier
-            .dragAndDropSource(block = {
-                detectDragGesturesAfterLongPress(
-                    onDragStart = {
-                        startTransfer(
-                            DragAndDropTransferData(
-                                ClipData.newPlainText("plant", userPlant.id)
+    val needsWater = needsWatering(userPlant.lastTimeWatered, userPlant.wateringInterval)
+
+    Box(modifier = modifier){
+        IconButton(
+            onClick = { navController.navigate("plantDetails/${userPlant.id}") },
+            modifier = modifier
+                .dragAndDropSource(block = {
+                    detectDragGesturesAfterLongPress(
+                        onDragStart = {
+                            startTransfer(
+                                DragAndDropTransferData(
+                                    ClipData.newPlainText("plant", userPlant.id)
+                                )
                             )
-                        )
-                    },
-                    onDrag = { change: PointerInputChange, dragAmount: Offset ->
-                        change.consume()
-                    },
-                    onDragCancel = {},
-                    onDragEnd = {}
-                )
-            })
-    ) {
-        AsyncImage(
-            model = userPlant.localImageUri ?: userPlant.imageURL.takeIf { it.isNotBlank() },
-            contentDescription = userPlant.name,
-            modifier = Modifier
-                .fillMaxSize()
-                .clip(CircleShape),
-            contentScale = ContentScale.Crop,
-            placeholder = painterResource(R.drawable.plant_placeholder),
-            error = painterResource(R.drawable.plant_placeholder),
-            fallback = painterResource(R.drawable.plant_placeholder)
-        )
+                        },
+                        onDrag = { change: PointerInputChange, dragAmount: Offset ->
+                            change.consume()
+                        },
+                        onDragCancel = {},
+                        onDragEnd = {}
+                    )
+                })
+        ) {
+            AsyncImage(
+                model = userPlant.localImageUri ?: userPlant.imageURL.takeIf { it.isNotBlank() },
+                contentDescription = userPlant.name,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(CircleShape),
+                contentScale = ContentScale.Crop,
+                placeholder = painterResource(R.drawable.plant_placeholder),
+                error = painterResource(R.drawable.plant_placeholder),
+                fallback = painterResource(R.drawable.plant_placeholder)
+            )
+        }
+        if (needsWater) {
+            WaterDropOverlayIcon(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(6.dp)
+            )
+        }
     }
+}
+
+@Composable
+private fun WaterDropOverlayIcon(
+    modifier: Modifier = Modifier
+) {
+    Icon(
+        imageVector = Icons.Filled.WaterDrop,
+        contentDescription = "Needs watering",
+        tint = Color(0xFF42A5F5),
+        modifier = Modifier
+            .size(36.dp)
+            .shadow(2.dp, CircleShape, clip = false)
+    )
+}
+
+fun needsWatering(lastTimeWatered: Date, wateringIntervalDays: Int): Boolean {
+    if (wateringIntervalDays <= 0) return false
+    val nextWaterTime = lastTimeWatered.time + wateringIntervalDays * DAY_MS
+    return System.currentTimeMillis() >= nextWaterTime
 }
