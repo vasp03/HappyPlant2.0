@@ -11,6 +11,8 @@ import se.mau.grupp7.happyplant2.model.*
 import se.mau.grupp7.happyplant2.network.PlantRepository
 import java.util.Date
 
+
+private const val MILLISECOND_CONVERSION = 86400000L
 class PlantViewModel(application: Application) : AndroidViewModel(application) {
 
     private val remoteRepository = PlantRepository()
@@ -26,9 +28,20 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
                 emptyList()
             )
 
-    private val _categories = MutableStateFlow<List<String>>(emptyList())
-    val categories: StateFlow<List<String>> = _categories
-
+    val categories: StateFlow<List<String>> =
+        userPlants
+            .map { plants ->
+                plants
+                    .map { it.category.trim() }
+                    .filter { it.isNotBlank() }
+                    .distinct()
+                    .sorted()
+            }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5000),
+                emptyList()
+            )
     private val popularPlants = listOf("rosa", "rose", "lavender", "monstera")
 
     private val _suggestions = MutableStateFlow<List<String>>(emptyList())
@@ -108,6 +121,7 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
 
     fun addPlantToUserCollection(
         plantDetails: PlantDetails,
+        daysAgo: Int,
         onError: () -> Unit
     ) {
         viewModelScope.launch {
@@ -137,7 +151,7 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
                     imageURL = plantDetails.imageUrl,
                     wateringInterval = intervalDays,
                     wateringAmount = waterAmount,
-                    lastTimeWatered = Date(),
+                    lastTimeWatered = Date(System.currentTimeMillis() - (daysAgo * MILLISECOND_CONVERSION)),
                     family = plantDetails.family,
                     sunlight = details.sunlight.joinToString(", "),
                     wateringNeeds = details.watering,
@@ -301,14 +315,4 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
                 SharingStarted.WhileSubscribed(5000),
                 100
             )
-
-    fun addCategoryIfNotExists(category: String) {
-        val trimmed = category.trim()
-
-        if (trimmed.isNotEmpty()
-            && trimmed !in _categories.value
-        ) {
-            _categories.value += trimmed
-        }
-    }
 }

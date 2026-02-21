@@ -71,6 +71,8 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import coil.compose.AsyncImage
@@ -184,8 +186,8 @@ fun MainScreen(viewModel: PlantViewModel) {
                                 onSearch = { query ->
                                     viewModel.getFlowers(query)
                                 },
-                                onAdd = { plantDetails ->
-                                    viewModel.addPlantToUserCollection(plantDetails) {
+                                onAdd = { plantDetails, daysAgo ->
+                                    viewModel.addPlantToUserCollection(plantDetails, daysAgo) {
                                         Toast.makeText(
                                             context,
                                             "Failed to add plant",
@@ -203,7 +205,15 @@ fun MainScreen(viewModel: PlantViewModel) {
                         2 -> {
                             LibraryScreen(
                                 userPlantList = userPlants,
-                                navController = navController
+                                navController = navController,
+                                onNavigateToDiscover = {
+                                    scope.launch {
+                                        pagerState.animateScrollToPage(0)
+                                    }
+                                },
+                                onUpdateCategory = { plant, newCategory ->
+                                    viewModel.updatePlantCategory(plant, newCategory)
+                                }
                             )
                         }
                     }
@@ -591,10 +601,12 @@ fun PlantDiscoverScreen(
     plantTypes: List<PlantDetails>,
     suggestions: List<String>,
     onSearch: (String) -> Unit,
-    onAdd: (PlantDetails) -> Unit
+    onAdd: (PlantDetails, Int) -> Unit
 ) {
     var text by remember { mutableStateOf("") }
-
+    var showDialog by remember { mutableStateOf(false) }
+    var selectedPlant by remember { mutableStateOf<PlantDetails?>(null) }
+    var daysAgoText by remember { mutableStateOf("0") }
 
     Column(modifier = Modifier.fillMaxSize()) {
         TextField(
@@ -638,9 +650,61 @@ fun PlantDiscoverScreen(
             modifier = Modifier.weight(1f)
         ) {
             items(plantTypes) { plantType ->
-                PlantCard(plantType, onAdd = { onAdd(plantType) })
+                PlantCard(plantType, onAdd = {
+                    selectedPlant = plantType
+                    daysAgoText = "0"
+                    showDialog = true
+                })
             }
         }
+
+        if (showDialog && selectedPlant != null) {
+
+            AlertDialog(
+                onDismissRequest = {
+                    showDialog = false
+                },
+                title = {
+                    Text("When was it last watered?")
+                },
+                text = {
+                    Column {
+                        Text("Enter number of days ago (0 = today)")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        TextField(
+                            value = daysAgoText,
+                            onValueChange = {
+                                if (it.all { char -> char.isDigit() }) {
+                                    daysAgoText = it
+                                }
+                            },
+                            singleLine = true
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            val days = daysAgoText.toIntOrNull() ?: 0
+                            onAdd(selectedPlant!!, days)
+                            showDialog = false
+                        }
+                    ) {
+                        Text("Add Plant")
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            showDialog = false
+                        }
+                    ) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
+
     }
 }
 
@@ -707,9 +771,9 @@ fun DefaultPreview() {
                     imageUrl = ""
                 )
             ),
-            suggestions = listOf(),
+            suggestions = emptyList(),
             onSearch = {},
-            onAdd = {}
+            onAdd = {} as (PlantDetails, Int) -> Unit
         )
     }
 }
