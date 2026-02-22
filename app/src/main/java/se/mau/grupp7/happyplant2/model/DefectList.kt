@@ -23,11 +23,11 @@ object DefectList {
         // LEAF SYMPTOMS
         // Spots / Blights
         Defect("grease_spot", "Grease spot (Pythium blight)", "Leaf Symptoms", "Spots or Blights", -3),
-        Defect("dollar_spot", "Dollar spot", "Leaf Symptoms", "Spots or Blights", -3),
+        Defect("dollar_spot", "Dollar spot", "Leaf Symptoms", "Spots or Blights", -2),
         Defect("leaf_spot_diseases", "Leaf spot diseases", "Leaf Symptoms", "Spots or Blights", -2),
         Defect("alternaria_leaf_spot", "Alternaria leaf spot", "Leaf Symptoms", "Spots or Blights", -2),
-        Defect("alternaria_leaf_blight", "Alternaria leaf blight", "Leaf Symptoms", "Spots or Blights", -2),
-        Defect("alternaria_blight", "Alternaria blight", "Leaf Symptoms", "Spots or Blights", -2),
+        Defect("alternaria_leaf_blight", "Alternaria leaf blight", "Leaf Symptoms", "Spots or Blights", -3),
+        Defect("alternaria_blight", "Alternaria blight", "Leaf Symptoms", "Spots or Blights", -3),
         Defect("ascochyta_blight", "Ascochyta blight", "Leaf Symptoms", "Spots or Blights", -3),
         Defect("cercospora_leaf_spot", "Cercospora leaf spot", "Leaf Symptoms", "Spots or Blights", -2),
         Defect("cherry_leaf_spot", "Cherry leaf spot", "Leaf Symptoms", "Spots or Blights", -2),
@@ -42,7 +42,7 @@ object DefectList {
         Defect("leaf_spot", "Leaf spot", "Leaf Symptoms", "Spots or Blights", -2),
         Defect("angular_leaf_spot", "Angular leaf spot", "Leaf Symptoms", "Spots or Blights", -2),
         Defect("phomopsis_leaf_blight", "Phomopsis leaf blight", "Leaf Symptoms", "Spots or Blights", -3),
-        Defect("stemphylium_leaf_blight", "Stemphylium leaf blight", "Leaf Symptoms", "Spots or Blights", -2),
+        Defect("stemphylium_leaf_blight", "Stemphylium leaf blight", "Leaf Symptoms", "Spots or Blights", -3),
         Defect("alternaria_rot", "Alternaria rot", "Leaf Symptoms", "Spots or Blights", -3),
         Defect("ovulinia_petal_blight", "Ovulinia petal blight", "Leaf Symptoms", "Spots or Blights", -3),
         Defect("camellia_petal_and_flower_blight", "Camellia petal and flower blight", "Leaf Symptoms", "Spots or Blights", -3),
@@ -79,8 +79,8 @@ object DefectList {
         Defect("peach_leaf_curl", "Peach leaf curl", "Leaf Symptoms", "Scabs, Curls, or Blisters", -3),
         Defect("leaf_blister", "Leaf blister", "Leaf Symptoms", "Scabs, Curls, or Blisters", -2),
         // Scorching or Yellowing
-        Defect("almond_leaf_scorch", "Almond leaf scorch (Bacterial leaf scorch)", "Leaf Symptoms", "Scorching or Yellowing", -4),
-        Defect("leaf_scorch", "Leaf scorch", "Leaf Symptoms", "Scorching or Yellowing", -4),
+        Defect("almond_leaf_scorch", "Almond leaf scorch (Bacterial leaf scorch)", "Leaf Symptoms", "Scorching or Yellowing", -3),
+        Defect("leaf_scorch", "Leaf scorch", "Leaf Symptoms", "Scorching or Yellowing", -3),
         Defect("papery_bark", "Papery bark (Sappy bark)", "Leaf Symptoms", "Scorching or Yellowing", -3),
         // Mosaic, Mottling, or Distortions
         Defect("apple_mosaic", "Apple mosaic", "Leaf Symptoms", "Mosaic, Mottling, or Distortions", -3),
@@ -129,10 +129,10 @@ object DefectList {
         Defect("blight", "Blight", "Stem and Branch Symptoms", "Dieback or Blights", -4),
         Defect("rice_bacterial_blight", "Rice bacterial blight", "Stem and Branch Symptoms", "Dieback or Blights", -4),
         // Galls, Knots, or Abnormal Growths
-        Defect("crown_gall", "Crown gall", "Stem and Branch Symptoms", "Galls, Knots, or Abnormal Growths", -4),
-        Defect("clubroot", "Clubroot", "Stem and Branch Symptoms", "Galls, Knots, or Abnormal Growths", -4),
-        Defect("oleander_knot", "Oleander knot", "Stem and Branch Symptoms", "Galls, Knots, or Abnormal Growths", -4),
-        Defect("olive_knot", "Olive knot", "Stem and Branch Symptoms", "Galls, Knots, or Abnormal Growths", -4),
+        Defect("crown_gall", "Crown gall", "Stem and Branch Symptoms", "Galls, Knots, or Abnormal Growths", -3),
+        Defect("clubroot", "Clubroot", "Stem and Branch Symptoms", "Galls, Knots, or Abnormal Growths", -3),
+        Defect("oleander_knot", "Oleander knot", "Stem and Branch Symptoms", "Galls, Knots, or Abnormal Growths", -3),
+        Defect("olive_knot", "Olive knot", "Stem and Branch Symptoms", "Galls, Knots, or Abnormal Growths", -3),
         Defect("leaf_gall", "Leaf gall", "Stem and Branch Symptoms", "Galls, Knots, or Abnormal Growths", -2),
         Defect("witches_broom", "Witches' broom", "Stem and Branch Symptoms", "Galls, Knots, or Abnormal Growths", -3),
         Defect("fasciation", "Fasciation", "Stem and Branch Symptoms", "Galls, Knots, or Abnormal Growths", -2),
@@ -158,8 +158,8 @@ object DefectList {
         // Patches or Blights at Base
         Defect("brown_patch", "Brown patch (large patch or Rhizoctonia blight )", "Root and Crown Symptoms", "Patches or Blights at Base", -3),
         Defect("fusarium_patch", "Fusarium patch (Microdochium patch or pink snow mold)", "Root and Crown Symptoms", "Patches or Blights at Base", -3),
-        Defect("take_all_patch", "Take-all patch", "Root and Crown Symptoms", "Patches or Blights at Base", -4),
-        Defect("spring_dead_spot", "Spring dead spot", "Root and Crown Symptoms", "Patches or Blights at Base", -4),
+        Defect("take_all_patch", "Take-all patch", "Root and Crown Symptoms", "Patches or Blights at Base", -3),
+        Defect("spring_dead_spot", "Spring dead spot", "Root and Crown Symptoms", "Patches or Blights at Base", -3),
         Defect("summer_patch", "Summer patch", "Root and Crown Symptoms", "Patches or Blights at Base", -3),
         Defect("red_thread", "Red thread", "Root and Crown Symptoms", "Patches or Blights at Base", -2),
         Defect("snow_mold", "Snow mold", "Root and Crown Symptoms", "Patches or Blights at Base", -3),
@@ -183,17 +183,17 @@ object DefectList {
         Defect("souring", "Souring", "Fruit, Bulb, or Ear Symptoms", "Rots or Molds", -3),
         Defect("bacterial_ring_rot", "Bacterial ring rot", "Fruit, Bulb, or Ear Symptoms", "Rots or Molds", -4),
         // Spots, Scabs, or Blights
-        Defect("anthracnose", "Anthracnose", "Fruit, Bulb, or Ear Symptoms", "Spots, Scabs, or Blights", -4),
+        Defect("anthracnose", "Anthracnose", "Fruit, Bulb, or Ear Symptoms", "Spots, Scabs, or Blights", -3),
         Defect("black_blight", "Black blight (Ringspot)", "Fruit, Bulb, or Ear Symptoms", "Spots, Scabs, or Blights", -3),
         Defect("cavity_spot", "Cavity spot", "Fruit, Bulb, or Ear Symptoms", "Spots, Scabs, or Blights", -2),
         // Smuts or Ergot
         Defect("common_smut", "Common smut", "Fruit, Bulb, or Ear Symptoms", "Smuts or Ergot", -3),
         Defect("head_smut", "Head smut", "Fruit, Bulb, or Ear Symptoms", "Smuts or Ergot", -3),
-        Defect("fusarium_ear_and_stalk_rot", "Fusarium ear and stalk rot", "Fruit, Bulb, or Ear Symptoms", "Smuts or Ergot", -4),
+        Defect("fusarium_ear_and_stalk_rot", "Fusarium ear and stalk rot", "Fruit, Bulb, or Ear Symptoms", "Smuts or Ergot", -3),
         Defect("corn_smut", "Corn smut", "Fruit, Bulb, or Ear Symptoms", "Smuts or Ergot", -3),
         Defect("bunt", "Bunt", "Fruit, Bulb, or Ear Symptoms", "Smuts or Ergot", -3),
         Defect("smut", "Smut", "Fruit, Bulb, or Ear Symptoms", "Smuts or Ergot", -3),
-        Defect("ergot", "Ergot", "Fruit, Bulb, or Ear Symptoms", "Smuts or Ergot", -4),
+        Defect("ergot", "Ergot", "Fruit, Bulb, or Ear Symptoms", "Smuts or Ergot", -3),
         // WHOLE PLANT OR SYSTEMIC SYMPTOMS
         // Wilts
         Defect("verticillium_wilt", "Verticillium wilt", "Whole Plant or Systemic Symptoms", "Wilts", -4),
@@ -216,23 +216,23 @@ object DefectList {
         Defect("panama_disease", "Panama disease", "Whole Plant or Systemic Symptoms", "Viral or Viroid Infections", -4),
         // OTHER OR NON-PATHOGENIC ISSUES
         // Fungal Growths or Brackets
-        Defect("fairy_ring", "Fairy ring", "Other or Non-Pathogenic Issues", "Fungal Growths or Brackets", -2),
-        Defect("fungi_nuisance", "Fungi Nuisance", "Other or Non-Pathogenic Issues", "Fungal Growths or Brackets", -1),
-        Defect("mushrooms", "Mushrooms", "Other or Non-Pathogenic Issues", "Fungal Growths or Brackets", -1),
-        Defect("hairy_turkey_tail", "Hairy turkey tail", "Other or Non-Pathogenic Issues", "Fungal Growths or Brackets", -2),
-        Defect("parchment_fungus", "Parchment fungus", "Other or Non-Pathogenic Issues", "Fungal Growths or Brackets", -2),
-        Defect("sulfur_fungus", "Sulfur fungus", "Other or Non-Pathogenic Issues", "Fungal Growths or Brackets", -2),
-        Defect("artist_conk", "Artist's conk", "Other or Non-Pathogenic Issues", "Fungal Growths or Brackets", -3),
-        Defect("common_split_gill", "Common split gill", "Other or Non-Pathogenic Issues", "Fungal Growths or Brackets", -2),
-        Defect("oyster_mushroom", "Oyster mushroom", "Other or Non-Pathogenic Issues", "Fungal Growths or Brackets", -1),
+        Defect("fairy_ring", "Fairy ring", "Other or Non-Pathogenic Issues", "Fungal Growths or Brackets", -1),
+        Defect("fungi_nuisance", "Fungi Nuisance", "Other or Non-Pathogenic Issues", "Fungal Growths or Brackets", 0),
+        Defect("mushrooms", "Mushrooms", "Other or Non-Pathogenic Issues", "Fungal Growths or Brackets", 0),
+        Defect("hairy_turkey_tail", "Hairy turkey tail", "Other or Non-Pathogenic Issues", "Fungal Growths or Brackets", -1),
+        Defect("parchment_fungus", "Parchment fungus", "Other or Non-Pathogenic Issues", "Fungal Growths or Brackets", -1),
+        Defect("sulfur_fungus", "Sulfur fungus", "Other or Non-Pathogenic Issues", "Fungal Growths or Brackets", -1),
+        Defect("artist_conk", "Artist's conk", "Other or Non-Pathogenic Issues", "Fungal Growths or Brackets", -1),
+        Defect("common_split_gill", "Common split gill", "Other or Non-Pathogenic Issues", "Fungal Growths or Brackets", -1),
+        Defect("oyster_mushroom", "Oyster mushroom", "Other or Non-Pathogenic Issues", "Fungal Growths or Brackets", 0),
         // Fluxes or Oozes
-        Defect("foamy_canker", "Foamy canker (alcoholic flux)", "Other or Non-Pathogenic Issues", "Fluxes or Oozes", -2),
-        Defect("alcoholic_flux", "Alcoholic flux (Foamy canker)", "Other or Non-Pathogenic Issues", "Fluxes or Oozes", -2),
-        Defect("wetwood_or_slime_flux", "Wetwood or slime flux", "Other or Non-Pathogenic Issues", "Fluxes or Oozes", -2),
-        Defect("drippy_acorns", "Drippy acorns (Drippy oak)", "Other or Non-Pathogenic Issues", "Fluxes or Oozes", -2),
+        Defect("foamy_canker", "Foamy canker (alcoholic flux)", "Other or Non-Pathogenic Issues", "Fluxes or Oozes", -1),
+        Defect("alcoholic_flux", "Alcoholic flux (Foamy canker)", "Other or Non-Pathogenic Issues", "Fluxes or Oozes", -1),
+        Defect("wetwood_or_slime_flux", "Wetwood or slime flux", "Other or Non-Pathogenic Issues", "Fluxes or Oozes", -1),
+        Defect("drippy_acorns", "Drippy acorns (Drippy oak)", "Other or Non-Pathogenic Issues", "Fluxes or Oozes", -1),
         Defect("sooty_mold", "Sooty mold", "Other or Non-Pathogenic Issues", "Fluxes or Oozes", -1),
         DEAD
-        )
+    )
 
     val categories: List<String>
         get() = ALL.map { it.category }.distinct()
