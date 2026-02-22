@@ -137,10 +137,27 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
                     "none" -> "24-30"
                     else -> "5-7"
                 }
-                val parts = benchmarkValue.split("-").map { it.trim().toIntOrNull() ?: 7 }
-                val minInterval = parts[0]
-                val maxInterval = parts.getOrElse(1) { minInterval }
+                val parts = benchmarkValue
+                    .split("-")
+                    .mapNotNull { it.trim().toIntOrNull() }
 
+                val (minInterval, maxInterval) = when {
+                    parts.size >= 2 -> {
+                        parts[0] to parts[1]
+                    }
+
+                    parts.size == 1 -> {
+                        val value = parts[0]
+                        val spread = (value * 0.3).toInt().coerceAtLeast(1)
+                        val min = (value - spread).coerceAtLeast(1)
+                        val max = value + spread
+                        min to max
+                    }
+
+                    else -> {
+                        5 to 7
+                    }
+                }
                 val waterAmount = when (details.watering.lowercase()) {
                     "frequent" -> WaterAmount.OFTEN
                     "average" -> WaterAmount.RARELY
