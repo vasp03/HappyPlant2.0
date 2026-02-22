@@ -50,6 +50,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -82,6 +83,7 @@ import coil.compose.AsyncImage
 import se.mau.grupp7.happyplant2.model.PlantDetails
 import se.mau.grupp7.happyplant2.model.SortOption
 import se.mau.grupp7.happyplant2.model.UserPlant
+import se.mau.grupp7.happyplant2.view.DiagnosisScreen
 import se.mau.grupp7.happyplant2.view.theme.HappyPlant2Theme
 import se.mau.grupp7.happyplant2.viewmodel.PlantViewModel
 import java.text.SimpleDateFormat
@@ -127,8 +129,21 @@ fun MainScreen(viewModel: PlantViewModel) {
                         viewModel.addPlantToUserCollection(plantDetails) {
                             Toast.makeText(context, "Failed to add plant", Toast.LENGTH_SHORT).show()
                         }
+                    },
+                    onOpenDiagnosis = { plantName ->
+                        if (plantName.isBlank()) navController.navigate("diagnosis")
+                        else navController.navigate("diagnosis/$plantName")
                     }
                 ) 
+            }
+            composable("diagnosis") {
+                DiagnosisScreen(userPlants = userPlants) }
+            composable("diagnosis/{plantName}") { backStackEntry ->
+                val plantName = backStackEntry.arguments?.getString("plantName") ?: ""
+                DiagnosisScreen(
+                    userPlants = emptyList(), //tills biblioteket finns
+                    preselectedPlantName = plantName
+                )
             }
             composable("plantList") {
                 UserPlantListScreen(
@@ -333,7 +348,8 @@ fun BonsaiScreen() {
 fun PlantDiscoverScreen(
     plantTypes: List<PlantDetails>,
     onSearch: (String) -> Unit,
-    onAdd: (PlantDetails) -> Unit
+    onAdd: (PlantDetails) -> Unit,
+    onOpenDiagnosis: (String) -> Unit
 ) {
     var sortOption by remember { mutableStateOf(SortOption.CommonNameAZ) }
 
@@ -347,6 +363,15 @@ fun PlantDiscoverScreen(
             sortOption = sortOption,
             onSortOptionSelected = { sortOption = it }
         )
+
+        Button(
+            onClick = { onOpenDiagnosis("") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+        ) {
+            Text("Diagnosis Tool")
+        }
 
         val sortedList = when (sortOption) {
             SortOption.CommonNameAZ -> plantTypes.sortedBy { it.common_name }
@@ -365,7 +390,11 @@ fun PlantDiscoverScreen(
             modifier = Modifier.fillMaxSize()
         ) {
             items(sortedList) { plant ->
-                PlantCard(plant, onAdd)
+                PlantCard(
+                    plantDetails = plant,
+                    onAdd = onAdd,
+                    onDiagnose = onOpenDiagnosis
+                )
             }
         }
     }
@@ -532,7 +561,7 @@ fun SortDropdown(sortOption: SortOption, onSortOptionSelected: (SortOption) -> U
 }
 
 @Composable
-fun PlantCard(plantDetails: PlantDetails, onAdd: (PlantDetails) -> Unit) {
+fun PlantCard(plantDetails: PlantDetails, onAdd: (PlantDetails) -> Unit, onDiagnose: (String) -> Unit) {
     Card(modifier = Modifier.padding(8.dp)) {
         Column(modifier = Modifier.fillMaxWidth()) {
             AsyncImage(
@@ -556,12 +585,28 @@ fun PlantCard(plantDetails: PlantDetails, onAdd: (PlantDetails) -> Unit) {
                 }
             }
 
-            Button(
-                onClick = { onAdd(plantDetails) },
-                modifier = Modifier.fillMaxWidth()
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text("Add Plant")
+                Button(
+                    onClick = { onAdd(plantDetails) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Add Plant")
+                }
+
+                OutlinedButton(onClick = {
+                    onDiagnose(plantDetails.common_name) },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Diagnose")
+                }
             }
+
+
         }
     }
 }

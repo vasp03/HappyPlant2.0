@@ -1,0 +1,63 @@
+{
+  "rules": [
+    {
+      "id": "overwatering",
+      "name": "Overwatering",
+      "symptoms": [
+        "yellow leaves",
+        "soft stems",
+        "mold on soil",
+        "drooping plant"
+      ],
+      "tips": [
+        "Allow the soil to dry out before watering again.",
+        "Make sure the pot has proper drainage holes.",
+        "Repot the plant in a well-draining soil if the soil feels compact.",
+        "Trim away brown and mushy roots."
+      ]
+    },
+    {
+      "id": "underwatering",
+      "name": "Underwatering",
+      "symptoms": [
+        "dry leaf edges",
+        "crispy leaves",
+        "dry soil",
+        "drooping plant"
+      ],
+      "tips": [
+        "Water thoroughly until excess water drains from the bottom.",
+        "Increase watering frequency slightly.",
+        "Avoid letting the plant stay completely dry for long periods."
+      ]
+    },
+    {
+      "id": "low_light",
+      "name": "Low Light",
+      "symptoms": [
+        "leggy growth",
+        "pale leaves",
+        "slow growth"
+      ],
+      "tips": [
+        "Move the plant closer to a window (although avoid harsh direct sunlight!)",
+        "Rotate the plant regularly for even growth.",
+        "Consider using grow lights during darker months."
+      ]
+    },
+    {
+      "id": "nutrient_deficiency",
+      "name": "Nutrient Deficiency",
+      "symptoms":[
+        "yellow leaves with green veins",
+        "pale leaves",
+        "poor growth"
+      ],
+      "tips": [
+        "Add plant fertilizer according to instructions.",
+        "Repot in fresh and nutrient-rich soil.",
+        "Avoid over-fertilizing!"
+      ]
+    }
+  ]
+}

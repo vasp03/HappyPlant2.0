@@ -11,6 +11,7 @@ android {
     compileSdk = 36
 
     buildFeatures {
+        compose = true
         buildConfig = true
     }
 
@@ -21,6 +22,11 @@ android {
     }
 
     defaultConfig {
+        buildConfigField(
+            "String",
+            "PERENUAL_API_KEY",
+            "\"${localProperties.getProperty("perenualApiKey") ?: ""}\""
+        )
         applicationId = "se.mau.grupp7.happyplant2"
         minSdk = 31
         targetSdk = 34
@@ -43,9 +49,6 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
-    }
-    buildFeatures {
-        compose = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.1"
@@ -78,5 +81,9 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     implementation("io.coil-kt:coil-compose:2.4.0")
+    implementation("com.google.code.gson:gson:2.10.1")
 }
