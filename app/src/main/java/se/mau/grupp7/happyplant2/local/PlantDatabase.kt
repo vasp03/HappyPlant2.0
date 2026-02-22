@@ -15,7 +15,7 @@ class Converters {
     @TypeConverter fun toDate(time: Long) = Date(time)
 }
 
-@Database(entities = [UserPlant::class], version = 2)
+@Database(entities = [UserPlant::class], version = 3)
 @TypeConverters(Converters::class)
 abstract class PlantDatabase : RoomDatabase() {
 

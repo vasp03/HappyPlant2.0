@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -17,7 +18,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentDataType.Companion.Date
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -27,7 +33,9 @@ import se.mau.grupp7.happyplant2.model.Defect
 import se.mau.grupp7.happyplant2.model.DefectList
 import se.mau.grupp7.happyplant2.model.UserPlant
 import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
+import kotlin.math.max
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,6 +77,12 @@ fun PlantScreen(
             onImageChange(plant, it.toString())
         }
     }
+
+    val currentTime = Date()
+    val timeSinceLast = currentTime.time - plant.lastTimeWatered.time
+    val daysSinceLastFloat = (timeSinceLast / (1000L * 60 * 60 * 24)).toFloat()
+    val progress = max(0f, 1f - (daysSinceLastFloat / plant.wateringIntervalMax.toFloat()))
+    val dottedFraction = plant.wateringIntervalMin.toFloat() / plant.wateringIntervalMax.toFloat()
 
     Box(
         modifier = Modifier
@@ -154,25 +168,61 @@ fun PlantScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(
-                text = "Last watered: $lastWateredTime",
-                style = MaterialTheme.typography.bodyLarge,
-                color = Color.White
-            )
+            Row(modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min)
+            ) {
+                Column {
+                    Text(
+                        text = "Last watered: $lastWateredTime",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color.White
+                    )
 
-            Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
 
-            if (plant.family.isNotBlank()) {
-                Spacer(modifier = Modifier.height(6.dp))
+                    if (plant.family.isNotBlank()) {
+                        Text(text = "Family: ${plant.family}", color = Color.White)
 
-                Text(text = "Family: ${plant.family}", color = Color.White)
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+
+                    Text(text = "Sunlight Needs: ${plant.sunlight}", color = Color.White)
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(text = "Water Needs: ${plant.wateringNeeds}", color = Color.White)
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .width(32.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color.Gray)
+                        .drawWithContent {
+                            drawContent()
+                            val lineY = size.height * dottedFraction
+                            drawLine(
+                                color = Color(0xFFFF6D41),
+                                start = Offset(0f, lineY),
+                                end = Offset(size.width, lineY),
+                                strokeWidth = 10f,
+                                pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+                            )
+                        }
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight(progress)
+                            .align(Alignment.BottomStart)
+                            .background(Color(0xFF3A8DFF))
+                    )
+                }
             }
-
-            Text(text = "Sunlight Needs: ${plant.sunlight}", color = Color.White)
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(text = "Water Needs: ${plant.wateringNeeds}", color = Color.White)
 
             Spacer(modifier = Modifier.height(16.dp))
 

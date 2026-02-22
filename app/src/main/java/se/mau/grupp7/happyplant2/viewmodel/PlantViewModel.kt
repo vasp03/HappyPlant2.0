@@ -130,13 +130,16 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
                 val details =
                     remoteRepository.getSpeciesDetails(plantDetails.id)
 
-                val intervalDays = when (details.watering.lowercase()) {
-                    "frequent" -> 3
-                    "average" -> 7
-                    "minimum" -> 14
-                    "none" -> 30
-                    else -> 7
+                val benchmarkValue = details.wateringGeneralBenchmark?.value ?: when (details.watering.lowercase()) {
+                    "frequent" -> "2-3"
+                    "average" -> "5-7"
+                    "minimum" -> "10-14"
+                    "none" -> "24-30"
+                    else -> "5-7"
                 }
+                val parts = benchmarkValue.split("-").map { it.trim().toIntOrNull() ?: 7 }
+                val minInterval = parts[0]
+                val maxInterval = parts.getOrElse(1) { minInterval }
 
                 val waterAmount = when (details.watering.lowercase()) {
                     "frequent" -> WaterAmount.OFTEN
@@ -150,7 +153,8 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
                     name = plantDetails.common_name,
                     description = plantDetails.scientific_name,
                     imageURL = plantDetails.imageUrl,
-                    wateringInterval = intervalDays,
+                    wateringIntervalMin = minInterval,
+                    wateringIntervalMax = maxInterval,
                     wateringAmount = waterAmount,
                     lastTimeWatered = Date(System.currentTimeMillis() - (daysAgo * MILLISECOND_CONVERSION)),
                     family = plantDetails.family,
