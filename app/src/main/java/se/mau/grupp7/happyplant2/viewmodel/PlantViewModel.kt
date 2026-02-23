@@ -97,16 +97,12 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
 
     fun getDiseases() {
         // Prevent reloading if already fetched
-        //if (diseasesLoaded) return
-        println("1")
+        if (diseasesLoaded) return
         viewModelScope.launch {
-            println("2")
             try {
-                println("3")
                 val diseases = remoteRepository.getPestDiseases()
                 _diseaseList.value = diseases
                 diseasesLoaded = true
-                println("4")
             } catch (e: Exception) {
                 println("ERROR: ${e.message}")
                 _diseaseList.value = emptyList()
