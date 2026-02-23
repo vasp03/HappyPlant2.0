@@ -102,6 +102,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import se.mau.grupp7.happyplant2.model.PestDisease
 
 enum class SearchMode {PLANTS, DIAGNOSES}
 class MainActivity : ComponentActivity() {
@@ -127,6 +128,7 @@ fun MainScreen(viewModel: PlantViewModel) {
     val plantList by viewModel.flowerList.collectAsState()
     val userPlants by viewModel.userPlants.collectAsState()
     val suggestions by viewModel.suggestions.collectAsState()
+    val diseaseList by viewModel.diseaseList.collectAsState()
     val context = LocalContext.current
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -190,13 +192,16 @@ fun MainScreen(viewModel: PlantViewModel) {
                 ) { page ->
 
                     when (page) {
-
                         0 -> {
                             DiscoverSearchScreen(
                                 plantTypes = plantList,
                                 suggestions = suggestions,
-                                onSearch = { query ->
+                                diseases = diseaseList,
+                                onSearchPlants = { query ->
                                     viewModel.getFlowers(query)
+                                },
+                                onLoadDiseases = {
+                                    viewModel.getDiseases()
                                 },
                                 onAdd = { plantDetails, daysAgo ->
                                     viewModel.addPlantToUserCollection(plantDetails, daysAgo) {
@@ -459,7 +464,9 @@ fun BonsaiScreen(viewModel: PlantViewModel) {
 fun DiscoverSearchScreen(
     plantTypes: List<PlantDetails>,
     suggestions: List<String>,
-    onSearch: (String) -> Unit,
+    diseases: List<PestDisease>,
+    onSearchPlants: (String) -> Unit,
+    onLoadDiseases: () -> Unit,
     onAdd: (PlantDetails, Int) -> Unit
 ) {
     var mode by rememberSaveable { mutableStateOf(SearchMode.PLANTS) }
@@ -477,20 +484,37 @@ fun DiscoverSearchScreen(
                 .fillMaxWidth()
                 .padding(16.dp),
             trailingIcon = {
-                IconButton(onClick = { onSearch(text) }) {
+                IconButton(
+                    onClick = {
+                        if (mode == SearchMode.PLANTS) {
+                            onSearchPlants(text)
+                        }
+                        // If DIAGNOSES → do nothing
+                    }
+                ) {
                     Icon(Icons.Filled.Search, contentDescription = "Search")
                 }
             },
             singleLine = true,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(
-                onSearch = { onSearch(text) }
-            ),
+                onSearch = {
+                    if (mode == SearchMode.PLANTS) {
+                        onSearchPlants(text)
+                    }
+                    // DIAGNOSES → do nothing
+                }
+            )
         )
 
         SearchModePills(
             mode = mode,
-            onModeChange = { mode = it },
+            onModeChange = {
+                mode = it
+                if (it == SearchMode.DIAGNOSES) {
+                    onLoadDiseases()
+                }
+            }
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -502,14 +526,16 @@ fun DiscoverSearchScreen(
                     suggestions = suggestions,
                     onSuggestionClick = { s ->
                         text = s
-                        onSearch(s)
+                        onSearchPlants(s)
                     },
                     onAdd = { plant, days ->
                         onAdd(plant, days)
                     }
                 )
 
-                SearchMode.DIAGNOSES -> DiagnosesPlaceholder()
+                SearchMode.DIAGNOSES -> DiagnosesDiscoverContent(
+                    diseases = diseases
+                )
             }
         }
 
@@ -558,29 +584,40 @@ private fun SearchModePills(
     }
 }
 
-
 @Composable
-private fun DiagnosesPlaceholder() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+fun DiagnosesDiscoverContent(
+    diseases: List<PestDisease>
+) {
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        contentPadding = PaddingValues(8.dp),
+        modifier = Modifier.fillMaxSize()
     ) {
-        Column(
-            modifier = Modifier.padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Diagnoses",
-                style = MaterialTheme.typography.titleLarge
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Den här funktionen är inte implementerad ännu.",
-                style = MaterialTheme.typography.bodyMedium
-            )
+        items(diseases) { disease ->
+            Card(modifier = Modifier.padding(8.dp)) {
+                Column(modifier = Modifier.padding(12.dp)) {
+
+                    Text(
+                        text = disease.common_name ?: "Unknown issue",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    val descText = disease.description?.joinToString("\n\n") { section ->
+                        section.description ?: ""
+                    } ?: ""
+
+                    Text(
+                        text = descText.take(120) + "...",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
         }
     }
 }
+
 @Composable
 fun PlantDiscoverContent(
     plantTypes: List<PlantDetails>,
@@ -719,35 +756,3 @@ fun PlantCard(plantDetails: PlantDetails, onAdd: (PlantDetails) -> Unit) {
         }
     }
 }
-
-@SuppressLint("ViewModelConstructorInComposable")
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview() {
-    HappyPlant2Theme {
-        DiscoverSearchScreen(
-            plantTypes = listOf(
-                PlantDetails(
-                    id = 1,
-                    common_name = "Monstera",
-                    scientific_name = "Monstera deliciosa",
-                    genus = "Monstera",
-                    family = "Araceae",
-                    imageUrl = ""
-                ),
-                PlantDetails(
-                    id = 2,
-                    common_name = "Ficus",
-                    scientific_name = "Ficus lyrata",
-                    genus = "Ficus",
-                    family = "Moraceae",
-                    imageUrl = ""
-                )
-            ),
-            suggestions = listOf("Monstera", "Ficus"),
-            onSearch = {},
-            onAdd = { _, _ -> }
-        )
-    }
-}
-

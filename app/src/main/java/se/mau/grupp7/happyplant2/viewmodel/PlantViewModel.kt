@@ -20,6 +20,9 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
     private val localRepository = LocalPlantRepository(application)
     private val _flowerList = MutableStateFlow<List<PlantDetails>>(emptyList())
     val flowerList: StateFlow<List<PlantDetails>> = _flowerList
+    private val _diseaseList = MutableStateFlow<List<PestDisease>>(emptyList())
+    val diseaseList: StateFlow<List<PestDisease>> = _diseaseList
+    private var diseasesLoaded = false
 
     val userPlants: StateFlow<List<UserPlant>> =
         localRepository.plants
@@ -88,6 +91,21 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
                 Log.e("HP_SEARCH", "Search failed for query='$q'", e)
                 _flowerList.value = emptyList()
                 _suggestions.value = emptyList()
+            }
+        }
+    }
+
+    fun getDiseases() {
+        // Prevent reloading if already fetched
+        if (diseasesLoaded) return
+
+        viewModelScope.launch {
+            try {
+                val diseases = remoteRepository.getPestDiseases()
+                _diseaseList.value = diseases
+                diseasesLoaded = true
+            } catch (e: Exception) {
+                _diseaseList.value = emptyList()
             }
         }
     }
