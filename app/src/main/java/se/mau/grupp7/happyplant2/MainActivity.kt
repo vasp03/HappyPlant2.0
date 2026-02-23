@@ -11,6 +11,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
@@ -74,6 +76,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.draw.BlurredEdgeTreatment
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.graphicsLayer
 import kotlinx.coroutines.launch
 import coil.compose.AsyncImage
 import se.mau.grupp7.happyplant2.model.Defect
@@ -261,8 +272,6 @@ fun MainScreen(viewModel: PlantViewModel) {
                             viewModel.updatePlantImage(plant, uri)
                         },
 
-                        defectOptions = Defect.entries,
-
                         categories = categories,
 
                         onClose = {
@@ -340,12 +349,12 @@ fun BonsaiScreen(viewModel: PlantViewModel) {
     val healthPercentage by viewModel.overallHealthPercentage.collectAsState()
 
     val bonsaiRes = when {
-        healthPercentage >= 90 -> R.drawable.bonsai_100
-        healthPercentage >= 70 -> R.drawable.bonsai_80
-        healthPercentage >= 50 -> R.drawable.bonsai_60
-        healthPercentage >= 30 -> R.drawable.bonsai_40
-        healthPercentage >= 10 -> R.drawable.bonsai_20
-        else -> R.drawable.bonsai_0
+        healthPercentage >= 90 -> R.drawable.bonsai_100_ai
+        healthPercentage >= 70 -> R.drawable.bonsai_80_ai
+        healthPercentage >= 50 -> R.drawable.bonsai_60_ai
+        healthPercentage >= 30 -> R.drawable.bonsai_40_ai
+        healthPercentage >= 10 -> R.drawable.bonsai_20_ai
+        else -> R.drawable.bonsai_0_ai
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -356,37 +365,53 @@ fun BonsaiScreen(viewModel: PlantViewModel) {
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
         )
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.20f))
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(530.dp)
-                .align(Alignment.BottomCenter)
-                .padding(16.dp),
-            contentAlignment = Alignment.BottomCenter
+        BoxWithConstraints(
+            modifier = Modifier.fillMaxSize()
         ) {
+
+            val shiftAmount = maxHeight * 0.02f
+
             Box(
                 modifier = Modifier
+                    .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .height(550.dp)
-                    .background(
-                        color = Color.Black.copy(alpha = 0.50f),
-                        shape = RoundedCornerShape(20.dp)
-                    )
-            )
+            ) {
 
-            val bonsaiImageBitmap = ImageBitmap.imageResource(id = bonsaiRes)
-            Image(
-                painter = BitmapPainter(bonsaiImageBitmap, filterQuality = FilterQuality.None),
-                contentDescription = "Bonsai Tree",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(550.dp)
-            )
+                // SHADOW LAYER
+                Image(
+                    painter = BitmapPainter(
+                        ImageBitmap.imageResource(id = bonsaiRes),
+                        filterQuality = FilterQuality.None
+                    ),
+                    contentDescription = null,
+                    contentScale = ContentScale.FillWidth,
+                    colorFilter = ColorFilter.tint(
+                        Color.Black,
+                        blendMode = BlendMode.SrcIn
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .scale(1.25f)
+                        .offset(y = -shiftAmount)
+                        .alpha(0.9f)
+                        .blur(24.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
+                        .graphicsLayer(clip = false)
+                )
+
+                // MAIN IMAGE
+                Image(
+                    painter = BitmapPainter(
+                        ImageBitmap.imageResource(id = bonsaiRes),
+                        filterQuality = FilterQuality.None
+                    ),
+                    contentDescription = "Bonsai Tree",
+                    contentScale = ContentScale.FillWidth,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .scale(1.12f)
+                        .offset(y = -shiftAmount)
+                )
+            }
         }
 
         IconButton(

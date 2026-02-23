@@ -84,6 +84,7 @@ dependencies {
 
     // Images
     implementation("io.coil-kt:coil-compose:2.4.0")
+    implementation("com.github.skydoves:cloudy:0.5.0")
 
     // Security
     implementation("org.bouncycastle:bcprov-jdk18on:1.78")
