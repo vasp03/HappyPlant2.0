@@ -256,27 +256,31 @@ fun LibraryScreen(
                 .align(Alignment.BottomEnd)
                 .padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {val selectedCount = selectedPlantIds.size
+        ) {
+            val selectedCount = selectedPlantIds.size
 
-            //CONFIR WATERING
-            //Only shows if selection mode is active and if at least one plant is selected
-            //Updates the database manually when triggered
+            // CONFIRM WATERING (manual selection commit)
+            // Visible only when selection mode is active AND at least one plant is selected.
+            // This is the ONLY action that commits watering for manually selected plants.
             if (isWaterSelectMode && selectedCount > 0) {
                 FloatingActionButton(
                     onClick = {
-                        onWaterSelected(selectedPlantIds.toList())   //Triggers the update fo the databse
-                        isWaterSelectMode = false                   //Resets the mode when update is done
+                        // Commit: mark selected plants as watered in the database
+                        onWaterSelected(selectedPlantIds.toList())
+
+                        // Reset UI state after commit
+                        isWaterSelectMode = false
                         selectedPlantIds = emptySet()
                     },
-                    containerColor = Color(0xFF4CAF50),
+                    containerColor = Color(0xFF3A8DFF),
                     shape = CircleShape
                 ) {
                     Text("Water ($selectedCount)")
                 }
             }
 
-            //CANCEL SELECTION
-            //Cancels the selection mode without making changes in the database
+            // CANCEL SELECTION
+            // Exits selection mode WITHOUT any database changes.
             if (isWaterSelectMode) {
                 FloatingActionButton(
                     onClick = {
@@ -290,7 +294,10 @@ fun LibraryScreen(
                 }
             }
 
-            //WATERING OPTIONS
+            // WATER OPTIONS (drop-up menu)
+            // Always visible. Opens a menu that either:
+            // A) enables manual selection, or
+            // B) auto-waters all plants that are currently due.
             Box {
                 FloatingActionButton(
                     onClick = { waterMenuExpanded = true },
@@ -299,7 +306,7 @@ fun LibraryScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.WaterDrop,
-                        contentDescription = "Watering Options"
+                        contentDescription = "Water options"
                     )
                 }
 
@@ -307,8 +314,9 @@ fun LibraryScreen(
                     expanded = waterMenuExpanded,
                     onDismissRequest = { waterMenuExpanded = false }
                 ) {
-                    //MANUAL WATERING WITH SELECTION
-                    //Activates selection mode so that the user can select what plants need watering
+                    // OPTION A: Manual selection mode
+                    // Enables selection mode so the user can choose specific plants to water.
+                    // No database update happens here.
                     DropdownMenuItem(
                         text = { Text("Select & Water") },
                         onClick = {
@@ -318,8 +326,8 @@ fun LibraryScreen(
                         }
                     )
 
-                    //AUTOMATIC WATERING
-                    //Waters all plants in need of water
+                    // OPTION B: Auto-water all due plants
+                    // Calculates which plants are due and commits watering immediately.
                     DropdownMenuItem(
                         text = { Text("Water All Due") },
                         onClick = {
@@ -334,7 +342,9 @@ fun LibraryScreen(
                                     snackbarHostState.showSnackbar("Nothing needs watering.")
                                 }
                             } else {
-                                onWaterSelected(dueIds) // DB-uppdatering sker här
+                                // Commit: mark all due plants as watered in the database
+                                onWaterSelected(dueIds)
+
                                 scope.launch {
                                     snackbarHostState.showSnackbar("Watered ${dueIds.size} plants.")
                                 }
@@ -344,8 +354,8 @@ fun LibraryScreen(
                 }
             }
 
-            //ADD PLANT
-            //Navigates to the DiscoverScreen to add a new plant
+            // ADD PLANT
+            // Navigates to DiscoverScreen to add a new plant to the library.
             FloatingActionButton(
                 onClick = { onNavigateToDiscover() },
                 containerColor = Color(0xFF4CAF50),
@@ -476,7 +486,7 @@ private fun WaterDropOverlayIcon(
         contentDescription = "Needs watering",
         tint = Color(0xFF42A5F5),
         modifier = Modifier
-            .size(36.dp)
+            .size(50.dp)
             .shadow(2.dp, CircleShape, clip = false)
     )
 }
