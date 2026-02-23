@@ -1,11 +1,9 @@
 package se.mau.grupp7.happyplant2.network
 
 import se.mau.grupp7.happyplant2.BuildConfig
-import se.mau.grupp7.happyplant2.model.ApiResponse
 import se.mau.grupp7.happyplant2.model.DefectList
 import se.mau.grupp7.happyplant2.model.PestDisease
 import se.mau.grupp7.happyplant2.model.PlantDetails
-import se.mau.grupp7.happyplant2.model.SpeciesDetails
 import se.mau.grupp7.happyplant2.model.UserPlant
 import se.mau.grupp7.happyplant2.model.WaterAmount
 import java.util.Date

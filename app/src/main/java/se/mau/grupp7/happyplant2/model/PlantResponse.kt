@@ -2,7 +2,7 @@ package se.mau.grupp7.happyplant2.model
 
 import com.google.gson.annotations.SerializedName
 
-data class ApiResponse(
+data class PlantResponse(
     val data: List<FlowerTypes>
 )
 

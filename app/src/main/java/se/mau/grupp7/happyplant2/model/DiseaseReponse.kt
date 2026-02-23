@@ -1,6 +1,6 @@
 package se.mau.grupp7.happyplant2.model
 
-data class PestDiseaseResponse(
+data class DiseaseResponse(
     val data: List<PestDisease>
 )
 
