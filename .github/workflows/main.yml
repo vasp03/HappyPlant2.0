@@ -26,6 +26,9 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Ensure gradle wrapper is up-to-date
+        run: gradle wrapper --gradle-version 9.1.0
+
       - name: Run Unit Tests
         run: ./gradlew test
 
