@@ -240,6 +240,9 @@ fun MainScreen(viewModel: PlantViewModel) {
                                 },
                                 onUpdateCategory = { plant, newCategory ->
                                     viewModel.updatePlantCategory(plant, newCategory)
+                                },
+                                onWaterSelected = { ids ->
+                                    viewModel.waterSelectedPlants(ids)
                                 }
                             )
                         }

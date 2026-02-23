@@ -13,4 +13,8 @@ class LocalPlantRepository(context: Context) {
     suspend fun insert(plant: UserPlant) = dao.insertPlant(plant)
     suspend fun update(plant: UserPlant) = dao.updatePlant(plant)
     suspend fun delete(plant: UserPlant) = dao.deletePlant(plant)
+
+    suspend fun waterPlants(ids: List<String>) {
+        dao.updateLastWateredForIds(ids, System.currentTimeMillis())
+    }
 }
