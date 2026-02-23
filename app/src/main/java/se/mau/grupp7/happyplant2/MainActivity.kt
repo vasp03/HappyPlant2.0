@@ -105,6 +105,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CardDefaults
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import se.mau.grupp7.happyplant2.model.PestDisease
@@ -781,7 +782,11 @@ fun PlantCard(plantDetails: PlantDetails, onAdd: (PlantDetails) -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(140.dp),
-                contentScale = ContentScale.Crop
+                contentScale = ContentScale.Crop,
+                placeholder = painterResource(R.drawable.plant_placeholder),
+                error = painterResource(R.drawable.plant_placeholder),
+                fallback = painterResource(R.drawable.plant_placeholder)
+
             )
 
             Box(
@@ -820,8 +825,6 @@ fun DiseaseCard(
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-
-            // First image (if available)
             disease.images?.firstOrNull()?.medium_url?.let { url ->
                 AsyncImage(
                     model = url,
@@ -829,7 +832,9 @@ fun DiseaseCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .wrapContentHeight(),
-                    contentScale = ContentScale.Crop
+                    contentScale = ContentScale.Crop,
+                    error = painterResource(R.drawable.plant_placeholder),
+                    fallback = painterResource(R.drawable.plant_placeholder)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
             }
