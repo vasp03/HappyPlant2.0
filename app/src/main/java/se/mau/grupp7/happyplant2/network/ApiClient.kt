@@ -5,7 +5,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object ApiClient {
 
-    private const val BASE_URL = "https://perenual.com/api/v2/"
+    private const val BASE_URL = "https://perenual.com/api/"
 
     val api: PerenualAPI by lazy {
         Retrofit.Builder()

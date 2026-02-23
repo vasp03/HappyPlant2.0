@@ -9,6 +9,7 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -22,6 +23,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -71,6 +73,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.AlertDialog
@@ -100,6 +103,8 @@ import java.util.Locale
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CardDefaults
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import se.mau.grupp7.happyplant2.model.PestDisease
@@ -472,8 +477,15 @@ fun DiscoverSearchScreen(
     var mode by rememberSaveable { mutableStateOf(SearchMode.PLANTS) }
     var text by rememberSaveable { mutableStateOf("") }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    val filteredDiseases = remember(text, diseases) {
+        if (text.isBlank()) diseases
+        else diseases.filter {
+            it.common_name?.contains(text, ignoreCase = true) == true ||
+                    it.scientific_name?.contains(text, ignoreCase = true) == true
+        }
+    }
 
+    Column(modifier = Modifier.fillMaxSize()) {
         TextField(
             value = text,
             onValueChange = { text = it },
@@ -484,14 +496,9 @@ fun DiscoverSearchScreen(
                 .fillMaxWidth()
                 .padding(16.dp),
             trailingIcon = {
-                IconButton(
-                    onClick = {
-                        if (mode == SearchMode.PLANTS) {
-                            onSearchPlants(text)
-                        }
-                        // If DIAGNOSES → do nothing
-                    }
-                ) {
+                IconButton(onClick = {
+                    if (mode == SearchMode.PLANTS) onSearchPlants(text)
+                }) {
                     Icon(Icons.Filled.Search, contentDescription = "Search")
                 }
             },
@@ -499,10 +506,7 @@ fun DiscoverSearchScreen(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(
                 onSearch = {
-                    if (mode == SearchMode.PLANTS) {
-                        onSearchPlants(text)
-                    }
-                    // DIAGNOSES → do nothing
+                    if (mode == SearchMode.PLANTS) onSearchPlants(text)
                 }
             )
         )
@@ -511,9 +515,7 @@ fun DiscoverSearchScreen(
             mode = mode,
             onModeChange = {
                 mode = it
-                if (it == SearchMode.DIAGNOSES) {
-                    onLoadDiseases()
-                }
+                if (it == SearchMode.DIAGNOSES) onLoadDiseases()
             }
         )
 
@@ -528,17 +530,14 @@ fun DiscoverSearchScreen(
                         text = s
                         onSearchPlants(s)
                     },
-                    onAdd = { plant, days ->
-                        onAdd(plant, days)
-                    }
+                    onAdd = { plant, days -> onAdd(plant, days) }
                 )
 
                 SearchMode.DIAGNOSES -> DiagnosesDiscoverContent(
-                    diseases = diseases
+                    diseases = filteredDiseases
                 )
             }
         }
-
     }
 }
 
@@ -588,35 +587,86 @@ private fun SearchModePills(
 fun DiagnosesDiscoverContent(
     diseases: List<PestDisease>
 ) {
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        contentPadding = PaddingValues(8.dp),
-        modifier = Modifier.fillMaxSize()
-    ) {
-        items(diseases) { disease ->
-            Card(modifier = Modifier.padding(8.dp)) {
-                Column(modifier = Modifier.padding(12.dp)) {
+    var selectedDisease by remember { mutableStateOf<PestDisease?>(null) }
 
-                    Text(
-                        text = disease.common_name ?: "Unknown issue",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    val descText = disease.description?.joinToString("\n\n") { section ->
-                        section.description ?: ""
-                    } ?: ""
-
-                    Text(
-                        text = descText.take(120) + "...",
-                        style = MaterialTheme.typography.bodySmall
-                    )
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            contentPadding = PaddingValues(8.dp),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            items(diseases) { disease ->
+                DiseaseCard(disease) { clicked ->
+                    selectedDisease = clicked
                 }
             }
         }
+
+        // Dialog for details
+        selectedDisease?.let { disease ->
+            AlertDialog(
+                onDismissRequest = { selectedDisease = null },
+                confirmButton = {
+                    TextButton(onClick = { selectedDisease = null }) {
+                        Text("Close")
+                    }
+                },
+                title = {
+                    Text(disease.common_name ?: "Unknown")
+                },
+                text = {
+                    Column(
+                        modifier = Modifier
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        // Scientific name
+                        disease.scientific_name?.let {
+                            Text(it, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+
+                        // Description section
+                        if (!disease.description.isNullOrEmpty()) {
+                            Text(
+                                "Description",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = Color(0xFF3F51B5)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            disease.description.forEach { section ->
+                                Text(
+                                    text = "${section.subtitle ?: ""}\n${section.description ?: ""}",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+                        }
+
+                        // Solution section
+                        if (!disease.solution.isNullOrEmpty()) {
+                            Text(
+                                "Solution",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = Color(0xFF4CAF50)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            disease.solution.forEach { section ->
+                                Text(
+                                    text = "${section.subtitle ?: ""}\n${section.description ?: ""}",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+                        }
+                    }
+                }
+            )
+        }
     }
 }
+
 
 @Composable
 fun PlantDiscoverContent(
@@ -753,6 +803,46 @@ fun PlantCard(plantDetails: PlantDetails, onAdd: (PlantDetails) -> Unit) {
             ) {
                 Text("Add Plant")
             }
+        }
+    }
+}
+
+@Composable
+fun DiseaseCard(
+    disease: PestDisease,
+    onClick: (PestDisease) -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .padding(8.dp)
+            .wrapContentHeight() // Take only needed height
+            .clickable { onClick(disease) },
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+
+            // First image (if available)
+            disease.images?.firstOrNull()?.medium_url?.let { url ->
+                AsyncImage(
+                    model = url,
+                    contentDescription = disease.common_name,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .wrapContentHeight(),
+                    contentScale = ContentScale.Crop
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            Text(
+                text = disease.common_name ?: "Unknown issue",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = disease.scientific_name ?: "",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray
+            )
         }
     }
 }

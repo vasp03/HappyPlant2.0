@@ -24,7 +24,7 @@ data class PestDisease(
     val id: Int,
     val common_name: String?,
     val scientific_name: String?,
-    val other_name: String?,
+    val other_name: List<String>?,
     val family: String?,
     val description: List<Section>?,
     val solution: List<Section>?,
