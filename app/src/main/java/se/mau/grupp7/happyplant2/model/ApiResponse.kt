@@ -37,7 +37,14 @@ data class SpeciesDetails(
     val watering: String = "Average",
     @SerializedName("sunlight")
     val sunlight: List<String> = emptyList(),
+    @SerializedName("watering_general_benchmark")
+    val wateringGeneralBenchmark: Benchmark? = null,
     val growth: Growth? = null
+)
+
+data class Benchmark(
+    val value: String? = null,
+    val unit: String? = null
 )
 
 data class Growth(

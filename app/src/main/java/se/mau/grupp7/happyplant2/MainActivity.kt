@@ -9,8 +9,10 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -18,8 +20,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -69,11 +73,21 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.draw.BlurredEdgeTreatment
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.graphicsLayer
 import kotlinx.coroutines.launch
 import coil.compose.AsyncImage
 import se.mau.grupp7.happyplant2.model.Defect
@@ -89,8 +103,14 @@ import java.util.Locale
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CardDefaults
+import androidx.compose.ui.platform.testTag
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import se.mau.grupp7.happyplant2.model.PestDisease
 
 enum class SearchMode {PLANTS, DIAGNOSES}
 class MainActivity : ComponentActivity() {
@@ -116,6 +136,8 @@ fun MainScreen(viewModel: PlantViewModel) {
     val plantList by viewModel.flowerList.collectAsState()
     val userPlants by viewModel.userPlants.collectAsState()
     val suggestions by viewModel.suggestions.collectAsState()
+    val diseaseList by viewModel.diseaseList.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
     val context = LocalContext.current
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -179,13 +201,16 @@ fun MainScreen(viewModel: PlantViewModel) {
                 ) { page ->
 
                     when (page) {
-
                         0 -> {
                             DiscoverSearchScreen(
                                 plantTypes = plantList,
                                 suggestions = suggestions,
-                                onSearch = { query ->
+                                diseases = diseaseList,
+                                onSearchPlants = { query ->
                                     viewModel.getFlowers(query)
+                                },
+                                onLoadDiseases = {
+                                    viewModel.getDiseases()
                                 },
                                 onAdd = { plantDetails, daysAgo ->
                                     viewModel.addPlantToUserCollection(plantDetails, daysAgo) {
@@ -195,7 +220,8 @@ fun MainScreen(viewModel: PlantViewModel) {
                                             Toast.LENGTH_SHORT
                                         ).show()
                                     }
-                                }
+                                },
+                                isLoading = isLoading
                             )
                         }
 
@@ -263,8 +289,6 @@ fun MainScreen(viewModel: PlantViewModel) {
                         onImageChange = { plant, uri ->
                             viewModel.updatePlantImage(plant, uri)
                         },
-
-                        defectOptions = Defect.entries,
 
                         categories = categories,
 
@@ -343,12 +367,12 @@ fun BonsaiScreen(viewModel: PlantViewModel) {
     val healthPercentage by viewModel.overallHealthPercentage.collectAsState()
 
     val bonsaiRes = when {
-        healthPercentage >= 90 -> R.drawable.bonsai_100
-        healthPercentage >= 70 -> R.drawable.bonsai_80
-        healthPercentage >= 50 -> R.drawable.bonsai_60
-        healthPercentage >= 30 -> R.drawable.bonsai_40
-        healthPercentage >= 10 -> R.drawable.bonsai_20
-        else -> R.drawable.bonsai_0
+        healthPercentage >= 90 -> R.drawable.bonsai_100_ai
+        healthPercentage >= 70 -> R.drawable.bonsai_80_ai
+        healthPercentage >= 50 -> R.drawable.bonsai_60_ai
+        healthPercentage >= 30 -> R.drawable.bonsai_40_ai
+        healthPercentage >= 10 -> R.drawable.bonsai_20_ai
+        else -> R.drawable.bonsai_0_ai
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -359,37 +383,53 @@ fun BonsaiScreen(viewModel: PlantViewModel) {
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
         )
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.20f))
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(530.dp)
-                .align(Alignment.BottomCenter)
-                .padding(16.dp),
-            contentAlignment = Alignment.BottomCenter
+        BoxWithConstraints(
+            modifier = Modifier.fillMaxSize()
         ) {
+
+            val shiftAmount = maxHeight * 0.02f
+
             Box(
                 modifier = Modifier
+                    .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .height(550.dp)
-                    .background(
-                        color = Color.Black.copy(alpha = 0.50f),
-                        shape = RoundedCornerShape(20.dp)
-                    )
-            )
+            ) {
 
-            val bonsaiImageBitmap = ImageBitmap.imageResource(id = bonsaiRes)
-            Image(
-                painter = BitmapPainter(bonsaiImageBitmap, filterQuality = FilterQuality.None),
-                contentDescription = "Bonsai Tree",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(550.dp)
-            )
+                // SHADOW LAYER
+                Image(
+                    painter = BitmapPainter(
+                        ImageBitmap.imageResource(id = bonsaiRes),
+                        filterQuality = FilterQuality.None
+                    ),
+                    contentDescription = null,
+                    contentScale = ContentScale.FillWidth,
+                    colorFilter = ColorFilter.tint(
+                        Color.Black,
+                        blendMode = BlendMode.SrcIn
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .scale(1.25f)
+                        .offset(y = -shiftAmount)
+                        .alpha(0.9f)
+                        .blur(24.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
+                        .graphicsLayer(clip = false)
+                )
+
+                // MAIN IMAGE
+                Image(
+                    painter = BitmapPainter(
+                        ImageBitmap.imageResource(id = bonsaiRes),
+                        filterQuality = FilterQuality.None
+                    ),
+                    contentDescription = "Bonsai Tree",
+                    contentScale = ContentScale.FillWidth,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .scale(1.12f)
+                        .offset(y = -shiftAmount)
+                )
+            }
         }
 
         IconButton(
@@ -437,14 +477,24 @@ fun BonsaiScreen(viewModel: PlantViewModel) {
 fun DiscoverSearchScreen(
     plantTypes: List<PlantDetails>,
     suggestions: List<String>,
-    onSearch: (String) -> Unit,
-    onAdd: (PlantDetails, Int) -> Unit
+    diseases: List<PestDisease>,
+    onSearchPlants: (String) -> Unit,
+    onLoadDiseases: () -> Unit,
+    onAdd: (PlantDetails, Int) -> Unit,
+    isLoading: Boolean
 ) {
     var mode by rememberSaveable { mutableStateOf(SearchMode.PLANTS) }
     var text by rememberSaveable { mutableStateOf("") }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    val filteredDiseases = remember(text, diseases) {
+        if (text.isBlank()) diseases
+        else diseases.filter {
+            it.common_name?.contains(text, ignoreCase = true) == true ||
+                    it.scientific_name?.contains(text, ignoreCase = true) == true
+        }
+    }
 
+    Column(modifier = Modifier.fillMaxSize()) {
         TextField(
             value = text,
             onValueChange = { text = it },
@@ -453,22 +503,30 @@ fun DiscoverSearchScreen(
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(16.dp)
+                .testTag("search_text_field"),
             trailingIcon = {
-                IconButton(onClick = { onSearch(text) }) {
+                IconButton(modifier = Modifier.testTag("search_text_search_button"), onClick = {
+                    if (mode == SearchMode.PLANTS) onSearchPlants(text)
+                }) {
                     Icon(Icons.Filled.Search, contentDescription = "Search")
                 }
             },
             singleLine = true,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(
-                onSearch = { onSearch(text) }
-            ),
+                onSearch = {
+                    if (mode == SearchMode.PLANTS) onSearchPlants(text)
+                }
+            )
         )
 
         SearchModePills(
             mode = mode,
-            onModeChange = { mode = it },
+            onModeChange = {
+                mode = it
+                if (it == SearchMode.DIAGNOSES) onLoadDiseases()
+            }
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -480,17 +538,18 @@ fun DiscoverSearchScreen(
                     suggestions = suggestions,
                     onSuggestionClick = { s ->
                         text = s
-                        onSearch(s)
+                        onSearchPlants(s)
                     },
-                    onAdd = { plant, days ->
-                        onAdd(plant, days)
-                    }
+                    onAdd = { plant, days -> onAdd(plant, days) },
+                    isLoading = isLoading
                 )
 
-                SearchMode.DIAGNOSES -> DiagnosesPlaceholder()
+                SearchMode.DIAGNOSES -> DiagnosesDiscoverContent(
+                    diseases = filteredDiseases,
+                    isLoading = isLoading
+                )
             }
         }
-
     }
 }
 
@@ -536,125 +595,191 @@ private fun SearchModePills(
     }
 }
 
-
 @Composable
-private fun DiagnosesPlaceholder() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            modifier = Modifier.padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Diagnoses",
-                style = MaterialTheme.typography.titleLarge
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Den här funktionen är inte implementerad ännu.",
-                style = MaterialTheme.typography.bodyMedium
-            )
+fun DiagnosesDiscoverContent(
+    diseases: List<PestDisease>,
+    isLoading: Boolean
+) {
+    var selectedDisease by remember { mutableStateOf<PestDisease?>(null) }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+
+        if (isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = Color.White)
+            }
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                contentPadding = PaddingValues(8.dp),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                items(diseases) { disease ->
+                    DiseaseCard(disease) { clicked ->
+                        selectedDisease = clicked
+                    }
+                }
+            }
+        }
+
+        // Dialog for details
+        selectedDisease?.let { disease ->
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1F1F1F)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    Text(
+                        text = disease.common_name ?: "Unknown",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.White.copy(alpha = 0.9f)
+                    )
+                    disease.scientific_name?.let {
+                        Text(
+                            it,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+
+                    if (!disease.description.isNullOrEmpty()) {
+                        Text("Description", style = MaterialTheme.typography.titleMedium, color = Color.White.copy(alpha = 0.9f))
+                        Spacer(modifier = Modifier.height(4.dp))
+                        disease.description.forEach { section ->
+                            Text(
+                                text = "${section.subtitle ?: ""}\n${section.description ?: ""}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.White
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                    }
+
+                    if (!disease.solution.isNullOrEmpty()) {
+                        Text("Solution", style = MaterialTheme.typography.titleMedium, color = Color.White.copy(alpha = 0.9f))
+                        Spacer(modifier = Modifier.height(4.dp))
+                        disease.solution.forEach { section ->
+                            Text(
+                                text = "${section.subtitle ?: ""}\n${section.description ?: ""}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.White
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TextButton(onClick = { selectedDisease = null }) {
+                        Text("Close", color = Color.White)
+                    }
+                }
+            }
         }
     }
 }
+
 @Composable
 fun PlantDiscoverContent(
     plantTypes: List<PlantDetails>,
     suggestions: List<String>,
     onSuggestionClick: (String) -> Unit,
-    onAdd: (PlantDetails, Int) -> Unit
+    onAdd: (PlantDetails, Int) -> Unit,
+    isLoading: Boolean
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var selectedPlant by remember { mutableStateOf<PlantDetails?>(null) }
     var daysAgoText by remember { mutableStateOf("0") }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize()) {
 
-        if (suggestions.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Did you mean:",
-                color = Color.White,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
+        if (isLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = Color.White)
+            }
+        } else {
+            Column(modifier = Modifier.fillMaxSize()) {
 
-            Spacer(modifier = Modifier.height(6.dp))
-
-            Row(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                suggestions.forEach { s ->
-                    Button(onClick = { onSuggestionClick(s) }) {
-                        Text(s)
+                if (suggestions.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Did you mean:",
+                        color = Color.White,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        suggestions.forEach { s ->
+                            Button(onClick = { onSuggestionClick(s) }) {
+                                Text(s)
+                            }
+                        }
                     }
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
-            }
 
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(8.dp),
-            modifier = Modifier.weight(1f)
-        ) {
-            items(plantTypes) { plantType ->
-                PlantCard(
-                    plantType,
-                    onAdd = {
-                        selectedPlant = plantType
-                        daysAgoText = "0"
-                        showDialog = true
-                    }
-                )
-            }
-        }
-
-        if (showDialog && selectedPlant != null) {
-
-            AlertDialog(
-                onDismissRequest = { showDialog = false },
-                title = { Text("When was it last watered?") },
-                text = {
-                    Column {
-                        Text("Enter number of days ago (0 = today)")
-                        Spacer(modifier = Modifier.height(8.dp))
-                        TextField(
-                            value = daysAgoText,
-                            onValueChange = {
-                                if (it.all { char -> char.isDigit() }) {
-                                    daysAgoText = it
-                                }
-                            },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Number
-                            )
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    contentPadding = PaddingValues(8.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    items(plantTypes) { plantType ->
+                        PlantCard(
+                            plantType,
+                            onAdd = {
+                                selectedPlant = plantType
+                                daysAgoText = "0"
+                                showDialog = true
+                            }
                         )
                     }
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            val days = daysAgoText.toIntOrNull() ?: 0
-                            onAdd(selectedPlant!!, days)
-                            showDialog = false
-                        }
-                    ) {
-                        Text("Add Plant")
-                    }
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = { showDialog = false }
-                    ) {
-                        Text("Cancel")
-                    }
                 }
-            )
+
+                if (showDialog && selectedPlant != null) {
+                    AlertDialog(
+                        onDismissRequest = { showDialog = false },
+                        title = { Text("When was it last watered?") },
+                        text = {
+                            Column {
+                                Text("Enter number of days ago (0 = today)")
+                                Spacer(modifier = Modifier.height(8.dp))
+                                TextField(
+                                    value = daysAgoText,
+                                    onValueChange = {
+                                        if (it.all { char -> char.isDigit() }) daysAgoText = it
+                                    },
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                                )
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    val days = daysAgoText.toIntOrNull() ?: 0
+                                    onAdd(selectedPlant!!, days)
+                                    showDialog = false
+                                }
+                            ) { Text("Add Plant") }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showDialog = false }) { Text("Cancel") }
+                        }
+                    )
+                }
+            }
         }
     }
 }
@@ -664,7 +789,7 @@ fun PlantCard(plantDetails: PlantDetails, onAdd: (PlantDetails) -> Unit) {
 
     fun fmt(value : String?): String = value?.takeIf { it.isNotBlank() } ?: "Unknown"
 
-    Card(modifier = Modifier.padding(8.dp)) {
+    Card(modifier = Modifier.padding(8.dp).testTag("PlantCardResult")) {
         Column(modifier = Modifier.fillMaxWidth()) {
             AsyncImage(
                 model = plantDetails.imageUrl,
@@ -672,7 +797,11 @@ fun PlantCard(plantDetails: PlantDetails, onAdd: (PlantDetails) -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(140.dp),
-                contentScale = ContentScale.Crop
+                contentScale = ContentScale.Crop,
+                placeholder = painterResource(R.drawable.plant_placeholder),
+                error = painterResource(R.drawable.plant_placeholder),
+                fallback = painterResource(R.drawable.plant_placeholder)
+
             )
 
             Box(
@@ -698,34 +827,42 @@ fun PlantCard(plantDetails: PlantDetails, onAdd: (PlantDetails) -> Unit) {
     }
 }
 
-@SuppressLint("ViewModelConstructorInComposable")
-@Preview(showBackground = true)
 @Composable
-fun DefaultPreview() {
-    HappyPlant2Theme {
-        DiscoverSearchScreen(
-            plantTypes = listOf(
-                PlantDetails(
-                    id = 1,
-                    common_name = "Monstera",
-                    scientific_name = "Monstera deliciosa",
-                    genus = "Monstera",
-                    family = "Araceae",
-                    imageUrl = ""
-                ),
-                PlantDetails(
-                    id = 2,
-                    common_name = "Ficus",
-                    scientific_name = "Ficus lyrata",
-                    genus = "Ficus",
-                    family = "Moraceae",
-                    imageUrl = ""
+fun DiseaseCard(
+    disease: PestDisease,
+    onClick: (PestDisease) -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .padding(8.dp)
+            .wrapContentHeight() // Take only needed height
+            .clickable { onClick(disease) },
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            disease.images?.firstOrNull()?.medium_url?.let { url ->
+                AsyncImage(
+                    model = url,
+                    contentDescription = disease.common_name,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .wrapContentHeight(),
+                    contentScale = ContentScale.Crop,
+                    error = painterResource(R.drawable.plant_placeholder),
+                    fallback = painterResource(R.drawable.plant_placeholder)
                 )
-            ),
-            suggestions = listOf("Monstera", "Ficus"),
-            onSearch = {},
-            onAdd = { _, _ -> }
-        )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            Text(
+                text = disease.common_name ?: "Unknown issue",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = disease.scientific_name ?: "",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray
+            )
+        }
     }
 }
-

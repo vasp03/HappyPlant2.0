@@ -2,6 +2,7 @@ package se.mau.grupp7.happyplant2.network
 
 import se.mau.grupp7.happyplant2.BuildConfig
 import se.mau.grupp7.happyplant2.model.ApiResponse
+import se.mau.grupp7.happyplant2.model.PestDisease
 import se.mau.grupp7.happyplant2.model.SpeciesDetails
 
 class PlantRepository {
@@ -14,5 +15,9 @@ class PlantRepository {
 
     suspend fun getSpeciesDetails(id: Int): SpeciesDetails {
         return api.getSpeciesDetails(id = id, apiKey = BuildConfig.API_KEY)
+    }
+
+    suspend fun getPestDiseases(): List<PestDisease> {
+        return api.getPestDiseaseList(BuildConfig.API_KEY).data
     }
 }

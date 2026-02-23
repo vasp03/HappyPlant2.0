@@ -15,12 +15,18 @@ import java.util.Date
 
 
 private const val MILLISECOND_CONVERSION = 86400000L
+private const val MAX_HEALTH = 5
 class PlantViewModel(application: Application) : AndroidViewModel(application) {
 
     private val remoteRepository = PlantRepository()
     private val localRepository = LocalPlantRepository(application)
     private val _flowerList = MutableStateFlow<List<PlantDetails>>(emptyList())
     val flowerList: StateFlow<List<PlantDetails>> = _flowerList
+    private val _diseaseList = MutableStateFlow<List<PestDisease>>(emptyList())
+    val diseaseList: StateFlow<List<PestDisease>> = _diseaseList
+    private var diseasesLoaded = false
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading
 
     val userPlants: StateFlow<List<UserPlant>> =
         localRepository.plants
@@ -50,16 +56,15 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
     val suggestions: StateFlow<List<String>> = _suggestions
 
     fun getFlowers(query: String) {
-
         val q = query.trim()
-        if(q.isBlank()) {
+        if (q.isBlank()) {
             _flowerList.value = emptyList()
-            _suggestions .value = emptyList()
+            _suggestions.value = emptyList()
             return
         }
-        Log.d("HP_SEARCH", "getFlowers('$q')")
 
         viewModelScope.launch {
+            _isLoading.value = true
             try {
                 val response = remoteRepository.getSpecies(q)
                 val mapped = response.data.map { ft ->
@@ -72,15 +77,9 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
                         imageUrl = ft.default_image?.regular_url ?: ""
                     )
                 }
-                Log.d("HP_SEARCH", "API returned ${response.data.size} items for '$q'")
+                _flowerList.value = rankPlants(mapped, q)
 
-
-                val ranked = rankPlants(mapped, q)
-                _flowerList.value = ranked
-                Log.d("HP_SEARCH", "ranked size = ${ranked.size}")
-
-
-                _suggestions.value = if(ranked.isEmpty()) {
+                _suggestions.value = if (_flowerList.value.isEmpty()) {
                     suggestQuery(q, popularPlants, maxDistance = 2)
                 } else{
                     emptyList()
@@ -101,6 +100,24 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
                 Log.e("HP_SEARCH", "Unexpected error for query='$q': ${e.message}", e)
                 _flowerList.value = emptyList()
                 _suggestions.value = emptyList()
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun getDiseases() {
+        if (diseasesLoaded) return
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val diseases = remoteRepository.getPestDiseases()
+                _diseaseList.value = diseases
+                diseasesLoaded = true
+            } catch (e: Exception) {
+                _diseaseList.value = emptyList()
+            } finally {
+                _isLoading.value = false
             }
         }
     }
@@ -143,14 +160,34 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
                 val details =
                     remoteRepository.getSpeciesDetails(plantDetails.id)
 
-                val intervalDays = when (details.watering.lowercase()) {
-                    "frequent" -> 3
-                    "average" -> 7
-                    "minimum" -> 14
-                    "none" -> 30
-                    else -> 7
+                val benchmarkValue = details.wateringGeneralBenchmark?.value ?: when (details.watering.lowercase()) {
+                    "frequent" -> "2-3"
+                    "average" -> "5-7"
+                    "minimum" -> "10-14"
+                    "none" -> "24-30"
+                    else -> "5-7"
                 }
+                val parts = benchmarkValue
+                    .split("-")
+                    .mapNotNull { it.trim().toIntOrNull() }
 
+                val (minInterval, maxInterval) = when {
+                    parts.size >= 2 -> {
+                        parts[0] to parts[1]
+                    }
+
+                    parts.size == 1 -> {
+                        val value = parts[0]
+                        val spread = (value * 0.3).toInt().coerceAtLeast(1)
+                        val min = (value - spread).coerceAtLeast(1)
+                        val max = value + spread
+                        min to max
+                    }
+
+                    else -> {
+                        5 to 7
+                    }
+                }
                 val waterAmount = when (details.watering.lowercase()) {
                     "frequent" -> WaterAmount.OFTEN
                     "average" -> WaterAmount.RARELY
@@ -163,14 +200,15 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
                     name = plantDetails.common_name,
                     description = plantDetails.scientific_name,
                     imageURL = plantDetails.imageUrl,
-                    wateringInterval = intervalDays,
+                    wateringIntervalMin = minInterval,
+                    wateringIntervalMax = maxInterval,
                     wateringAmount = waterAmount,
                     lastTimeWatered = Date(System.currentTimeMillis() - (daysAgo * MILLISECOND_CONVERSION)),
                     family = plantDetails.family,
                     sunlight = details.sunlight.joinToString(", "),
                     wateringNeeds = details.watering,
                     healthStatus = 5,
-                    defect = Defect.NONE
+                    defectId = DefectList.NONE.id
                 )
 
                 localRepository.insert(newPlant)
@@ -184,19 +222,14 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
     fun updatePlantDefect(plant: UserPlant, defect: Defect) {
         viewModelScope.launch {
 
-            val healthModifier = when (defect) {
-                Defect.WILTING_LEAVES -> -1
-                Defect.DEAD -> -5
-                else -> 0
-            }
-
             val newHealth =
-                (plant.healthStatus + healthModifier).coerceIn(0, 5)
+                (MAX_HEALTH + defect.healthImpact)
+                    .coerceIn(0, MAX_HEALTH)
 
             localRepository.update(
                 plant.copy(
-                    healthStatus = newHealth,
-                    defect = defect
+                    defectId = defect.id,
+                    healthStatus = newHealth
                 )
             )
         }
