@@ -6,9 +6,11 @@ import android.util.Log
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
 import se.mau.grupp7.happyplant2.local.LocalPlantRepository
 import se.mau.grupp7.happyplant2.model.*
 import se.mau.grupp7.happyplant2.network.PlantRepository
+import java.io.IOException
 import java.util.Date
 
 
@@ -59,7 +61,7 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
 
         viewModelScope.launch {
             try {
-                val response = remoteRepository.getSpecies(query)
+                val response = remoteRepository.getSpecies(q)
                 val mapped = response.data.map { ft ->
                     PlantDetails(
                         id = ft.id,
@@ -83,8 +85,20 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
                 } else{
                     emptyList()
                 }
+            }  catch (e: HttpException) {
+                val body = e.response()?.errorBody()?.string()
+                Log.e("HP_SEARCH", "HTTP ${e.code()} for query='$q' body=$body", e)
+                _flowerList.value = emptyList()
+                _suggestions.value = emptyList()
+
+            } catch (e: IOException) {
+                // nätverk: ingen internet, DNS, timeout, osv.
+                Log.e("HP_SEARCH", "Network error for query='$q': ${e.message}", e)
+                _flowerList.value = emptyList()
+                _suggestions.value = emptyList()
+
             } catch (e: Exception) {
-                Log.e("HP_SEARCH", "Search failed for query='$q'", e)
+                Log.e("HP_SEARCH", "Unexpected error for query='$q': ${e.message}", e)
                 _flowerList.value = emptyList()
                 _suggestions.value = emptyList()
             }

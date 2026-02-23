@@ -240,32 +240,54 @@ fun LibraryScreen(
                 .align(Alignment.BottomEnd)
                 .padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+        ) {val selectedCount = selectedPlantIds.size
 
+// 1) VATTNA (commit) – syns bara i selection mode och när man valt minst 1
+            if (isWaterSelectMode && selectedCount > 0) {
+                FloatingActionButton(
+                    onClick = {
+                        onWaterSelected(selectedPlantIds.toList())   // DB-uppdatering triggas här och bara här
+                        isWaterSelectMode = false
+                        selectedPlantIds = emptySet()
+                    },
+                    containerColor = Color(0xFF4CAF50),
+                    shape = CircleShape
+                ) {
+                    Text("Water ($selectedCount)")
+                }
+            }
+
+// 2) CANCEL – syns bara i selection mode
+            if (isWaterSelectMode) {
+                FloatingActionButton(
+                    onClick = {
+                        isWaterSelectMode = false
+                        selectedPlantIds = emptySet()
+                    },
+                    containerColor = Color(0xFFE57373),
+                    shape = CircleShape
+                ) {
+                    Text("Cancel")
+                }
+            }
+
+// 3) MODE-knapp – alltid synlig, togglar bara läget (ingen vattning)
             FloatingActionButton(
-                onClick = { if (!isWaterSelectMode) {
-                    isWaterSelectMode = true
+                onClick = {
+                    isWaterSelectMode = !isWaterSelectMode
                     selectedPlantIds = emptySet()
-                } else {
-                    if (selectedPlantIds.isNotEmpty()) {
-                        onWaterSelected(selectedPlantIds.toList())
-                    }
-                    isWaterSelectMode = false
-                    selectedPlantIds = emptySet()
-                }},
+                },
                 containerColor = Color(0xFF3A8DFF),
                 shape = CircleShape
             ) {
                 Icon(
                     imageVector = Icons.Default.WaterDrop,
-                    contentDescription = "Water plants"
+                    contentDescription = "Vattningsläge"
                 )
             }
-
+            // 4) Add plant – din befintliga navigation till Discover
             FloatingActionButton(
-                onClick = {
-                    onNavigateToDiscover()
-                },
+                onClick = { onNavigateToDiscover() },
                 containerColor = Color(0xFF4CAF50),
                 shape = CircleShape
             ) {
@@ -373,7 +395,7 @@ fun UserPlantCard(
             )
         }
 
-        // Markeringsindikator: enkel, tydlig, “enterprise-grade”
+        // Markeringsindikator
         if (isSelectionMode) {
             SelectionBadge(
                 selected = isSelected,
