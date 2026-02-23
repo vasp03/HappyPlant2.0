@@ -66,38 +66,15 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val response = remoteRepository.getSpecies(q)
-                val mapped = response.data.map { ft ->
-                    PlantDetails(
-                        id = ft.id,
-                        common_name = ft.common_name,
-                        scientific_name = ft.scientific_name.joinToString(", "),
-                        genus = ft.genus ?: "",
-                        family = ft.family ?: "",
-                        imageUrl = ft.default_image?.regular_url ?: ""
-                    )
-                }
-                _flowerList.value = rankPlants(mapped, q)
+                val plants = remoteRepository.getRankedPlants(q)
+                _flowerList.value = plants
 
-                _suggestions.value = if (_flowerList.value.isEmpty()) {
-                    suggestQuery(q, popularPlants, maxDistance = 2)
-                } else{
-                    emptyList()
-                }
-            }  catch (e: HttpException) {
-                val body = e.response()?.errorBody()?.string()
-                Log.e("HP_SEARCH", "HTTP ${e.code()} for query='$q' body=$body", e)
-                _flowerList.value = emptyList()
-                _suggestions.value = emptyList()
+                _suggestions.value =
+                    if (plants.isEmpty()) {
+                        suggestQuery(q, popularPlants, 2)
+                    } else emptyList()
 
-            } catch (e: IOException) {
-                // nätverk: ingen internet, DNS, timeout, osv.
-                Log.e("HP_SEARCH", "Network error for query='$q': ${e.message}", e)
-                _flowerList.value = emptyList()
-                _suggestions.value = emptyList()
-
-            } catch (e: Exception) {
-                Log.e("HP_SEARCH", "Unexpected error for query='$q': ${e.message}", e)
+            } catch (_: Exception) {
                 _flowerList.value = emptyList()
                 _suggestions.value = emptyList()
             } finally {
@@ -146,9 +123,10 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         return plants
-            .sortedBy { score(it) }
-            .filter { score(it) < 10 }
-    }
+            .map { it to score(it) }
+            .filter { it.second < 10 }
+            .sortedBy { it.second }
+            .map { it.first }    }
 
     fun addPlantToUserCollection(
         plantDetails: PlantDetails,
@@ -157,59 +135,8 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
     ) {
         viewModelScope.launch {
             try {
-                val details =
-                    remoteRepository.getSpeciesDetails(plantDetails.id)
-
-                val benchmarkValue = details.wateringGeneralBenchmark?.value ?: when (details.watering.lowercase()) {
-                    "frequent" -> "2-3"
-                    "average" -> "5-7"
-                    "minimum" -> "10-14"
-                    "none" -> "24-30"
-                    else -> "5-7"
-                }
-                val parts = benchmarkValue
-                    .split("-")
-                    .mapNotNull { it.trim().toIntOrNull() }
-
-                val (minInterval, maxInterval) = when {
-                    parts.size >= 2 -> {
-                        parts[0] to parts[1]
-                    }
-
-                    parts.size == 1 -> {
-                        val value = parts[0]
-                        val spread = (value * 0.3).toInt().coerceAtLeast(1)
-                        val min = (value - spread).coerceAtLeast(1)
-                        val max = value + spread
-                        min to max
-                    }
-
-                    else -> {
-                        5 to 7
-                    }
-                }
-                val waterAmount = when (details.watering.lowercase()) {
-                    "frequent" -> WaterAmount.OFTEN
-                    "average" -> WaterAmount.RARELY
-                    "minimum" -> WaterAmount.CACTUS
-                    "none" -> WaterAmount.NEVER
-                    else -> WaterAmount.RARELY
-                }
-
-                val newPlant = UserPlant(
-                    name = plantDetails.common_name,
-                    description = plantDetails.scientific_name,
-                    imageURL = plantDetails.imageUrl,
-                    wateringIntervalMin = minInterval,
-                    wateringIntervalMax = maxInterval,
-                    wateringAmount = waterAmount,
-                    lastTimeWatered = Date(System.currentTimeMillis() - (daysAgo * MILLISECOND_CONVERSION)),
-                    family = plantDetails.family,
-                    sunlight = details.sunlight.joinToString(", "),
-                    wateringNeeds = details.watering,
-                    healthStatus = 5,
-                    defectId = DefectList.NONE.id
-                )
+                val newPlant =
+                    remoteRepository.createUserPlant(plantDetails, daysAgo)
 
                 localRepository.insert(newPlant)
 
@@ -248,11 +175,16 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
 
         viewModelScope.launch {
             val now = Date()
-            val toWater = userPlants.value.filter { it.id in ids }
+            val idSet = ids.toSet()
 
-            toWater.forEach { plant ->
-                localRepository.update(plant.copy(lastTimeWatered = now))
-            }
+            userPlants.value
+                .asSequence()
+                .filter { it.id in idSet }
+                .forEach { plant ->
+                    localRepository.update(
+                        plant.copy(lastTimeWatered = now)
+                    )
+                }
         }
     }
 
@@ -322,11 +254,13 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
         if (q.length < 3) return emptyList()
 
         return candidates
+            .asSequence()
             .map { it to boundedLevenshtein(q, it, maxDistance) }
-            .filter { it.second <= maxDistance }
+            .filter { (_, distance) -> distance <= maxDistance }
             .sortedBy { it.second }
             .take(5)
             .map { it.first }
+            .toList()
     }
 
     fun updatePlantDetails(
@@ -375,4 +309,14 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
                 SharingStarted.WhileSubscribed(5000),
                 100
             )
+
+    fun getPlantById(id: String?): StateFlow<UserPlant?> {
+        return userPlants
+            .map { list -> list.find { it.id == id } }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5000),
+                null
+            )
+    }
 }

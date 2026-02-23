@@ -334,7 +334,7 @@ fun LibraryScreen(
                             waterMenuExpanded = false
 
                             val dueIds = userPlantList
-                                .filter { needsWatering(it.lastTimeWatered, it.wateringInterval) }
+                                .filter { needsWatering(it.lastTimeWatered, it.wateringIntervalMin) }
                                 .map { it.id }
 
                             if (dueIds.isEmpty()) {
@@ -415,7 +415,7 @@ fun UserPlantCard(
     onToggleSelected: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val needsWater = needsWatering(userPlant.lastTimeWatered, userPlant.wateringInterval)
+    val needsWater = needsWatering(userPlant.lastTimeWatered, userPlant.wateringIntervalMin)
 
     Box(modifier = modifier) {
 
@@ -493,7 +493,7 @@ private fun WaterDropOverlayIcon(
 
 fun needsWatering(lastTimeWatered: Date, wateringIntervalDays: Int): Boolean {
     if (wateringIntervalDays <= 0) return false
-    val nextWaterTime = lastTimeWatered.time + wateringIntervalDays * DAY_MS
+    val nextWaterTime = lastTimeWatered.time + wateringIntervalDays.toLong() * DAY_MS
     return System.currentTimeMillis() >= nextWaterTime
 }
 

@@ -171,8 +171,11 @@ fun PlantScreen(
             Row(modifier = Modifier
                 .fillMaxWidth()
                 .height(IntrinsicSize.Min)
+
             ) {
-                Column {
+                Column (
+                    modifier = Modifier.weight(1f)
+                ){
                     Text(
                         text = "Last watered: $lastWateredTime",
                         style = MaterialTheme.typography.bodyLarge,
@@ -194,7 +197,6 @@ fun PlantScreen(
                     Text(text = "Water Needs: ${plant.wateringNeeds}", color = Color.White)
                 }
 
-                Spacer(modifier = Modifier.weight(1f))
 
                 Box(
                     modifier = Modifier
