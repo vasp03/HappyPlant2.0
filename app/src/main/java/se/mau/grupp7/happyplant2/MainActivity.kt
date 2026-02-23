@@ -105,6 +105,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CardDefaults
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import se.mau.grupp7.happyplant2.model.PestDisease
@@ -494,9 +495,10 @@ fun DiscoverSearchScreen(
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(16.dp)
+                .testTag("search_text_field"),
             trailingIcon = {
-                IconButton(onClick = {
+                IconButton(modifier = Modifier.testTag("search_text_search_button"), onClick = {
                     if (mode == SearchMode.PLANTS) onSearchPlants(text)
                 }) {
                     Icon(Icons.Filled.Search, contentDescription = "Search")
@@ -773,7 +775,7 @@ fun PlantCard(plantDetails: PlantDetails, onAdd: (PlantDetails) -> Unit) {
 
     fun fmt(value : String?): String = value?.takeIf { it.isNotBlank() } ?: "Unknown"
 
-    Card(modifier = Modifier.padding(8.dp)) {
+    Card(modifier = Modifier.padding(8.dp).testTag("PlantCardResult")) {
         Column(modifier = Modifier.fillMaxWidth()) {
             AsyncImage(
                 model = plantDetails.imageUrl,
