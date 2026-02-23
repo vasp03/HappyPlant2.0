@@ -2,19 +2,15 @@ package se.mau.grupp7.happyplant2.viewmodel
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
-import android.util.Log
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import retrofit2.HttpException
 import se.mau.grupp7.happyplant2.local.LocalPlantRepository
 import se.mau.grupp7.happyplant2.model.*
 import se.mau.grupp7.happyplant2.network.PlantRepository
-import java.io.IOException
 import java.util.Date
 
 
-private const val MILLISECOND_CONVERSION = 86400000L
 private const val MAX_HEALTH = 5
 class PlantViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -51,7 +47,6 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
                 emptyList()
             )
     private val popularPlants = listOf("rosa", "rose", "lavender", "monstera")
-
     private val _suggestions = MutableStateFlow<List<String>>(emptyList())
     val suggestions: StateFlow<List<String>> = _suggestions
 
@@ -98,35 +93,6 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
     }
-
-    private fun rankPlants(
-        plants: List<PlantDetails>,
-        query: String
-    ): List<PlantDetails> {
-
-        val q = query.trim().lowercase()
-        if (q.isBlank()) return plants
-
-        fun score(p: PlantDetails): Int {
-            val cn = p.common_name.lowercase()
-            val sn = p.scientific_name.lowercase()
-            val genus = p.genus.lowercase()
-
-            return when {
-                cn.startsWith(q) -> 0
-                sn.startsWith(q) -> 0
-                cn.contains(q) -> 1
-                sn.contains(q) -> 1
-                genus.startsWith(q) -> 2
-                else -> 10
-            }
-        }
-
-        return plants
-            .map { it to score(it) }
-            .filter { it.second < 10 }
-            .sortedBy { it.second }
-            .map { it.first }    }
 
     fun addPlantToUserCollection(
         plantDetails: PlantDetails,

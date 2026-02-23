@@ -61,8 +61,6 @@ import se.mau.grupp7.happyplant2.model.SortOption
 import se.mau.grupp7.happyplant2.model.UserPlant
 import android.content.ClipData
 import android.content.ClipDescription
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -70,7 +68,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.runtime.SideEffect
 import androidx.compose.foundation.lazy.grid.items
 import java.util.Date
-import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState

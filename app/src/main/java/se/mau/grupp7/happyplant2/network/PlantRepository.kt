@@ -8,9 +8,11 @@ import se.mau.grupp7.happyplant2.model.UserPlant
 import se.mau.grupp7.happyplant2.model.WaterAmount
 import java.util.Date
 
+const val MILLISECOND_CONVERSION = 86400000L
 class PlantRepository {
 
     private val api = ApiClient.api
+
 
     suspend fun searchPlants(query: String): List<PlantDetails> {
         val response = api.getSpeciesList(
@@ -63,7 +65,7 @@ class PlantRepository {
             wateringAmount = waterAmount,
             lastTimeWatered = Date(
                 System.currentTimeMillis() -
-                        (daysAgo * 86400000L)
+                        (daysAgo * MILLISECOND_CONVERSION)
             ),
             family = plantDetails.family,
             sunlight = details.sunlight.joinToString(", "),
