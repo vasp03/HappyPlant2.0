@@ -71,7 +71,12 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.foundation.lazy.grid.items
 import java.util.Date
 import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.draw.shadow
+import kotlinx.coroutines.launch
 
 private val gridSpacing = 16.dp
 
@@ -94,12 +99,23 @@ fun LibraryScreen(
 
     val currentUserPlants = remember { mutableStateOf(userPlantList) }
 
+    var waterMenuExpanded by remember { mutableStateOf(false) }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
     // Update the mutable state on every recomposition so its always current.
     SideEffect {
         currentUserPlants.value = userPlantList
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -242,12 +258,14 @@ fun LibraryScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {val selectedCount = selectedPlantIds.size
 
-// 1) VATTNA (commit) – syns bara i selection mode och när man valt minst 1
+            //CONFIR WATERING
+            //Only shows if selection mode is active and if at least one plant is selected
+            //Updates the database manually when triggered
             if (isWaterSelectMode && selectedCount > 0) {
                 FloatingActionButton(
                     onClick = {
-                        onWaterSelected(selectedPlantIds.toList())   // DB-uppdatering triggas här och bara här
-                        isWaterSelectMode = false
+                        onWaterSelected(selectedPlantIds.toList())   //Triggers the update fo the databse
+                        isWaterSelectMode = false                   //Resets the mode when update is done
                         selectedPlantIds = emptySet()
                     },
                     containerColor = Color(0xFF4CAF50),
@@ -257,7 +275,8 @@ fun LibraryScreen(
                 }
             }
 
-// 2) CANCEL – syns bara i selection mode
+            //CANCEL SELECTION
+            //Cancels the selection mode without making changes in the database
             if (isWaterSelectMode) {
                 FloatingActionButton(
                     onClick = {
@@ -271,21 +290,62 @@ fun LibraryScreen(
                 }
             }
 
-// 3) MODE-knapp – alltid synlig, togglar bara läget (ingen vattning)
-            FloatingActionButton(
-                onClick = {
-                    isWaterSelectMode = !isWaterSelectMode
-                    selectedPlantIds = emptySet()
-                },
-                containerColor = Color(0xFF3A8DFF),
-                shape = CircleShape
-            ) {
-                Icon(
-                    imageVector = Icons.Default.WaterDrop,
-                    contentDescription = "Vattningsläge"
-                )
+            //WATERING OPTIONS
+            Box {
+                FloatingActionButton(
+                    onClick = { waterMenuExpanded = true },
+                    containerColor = Color(0xFF3A8DFF),
+                    shape = CircleShape
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.WaterDrop,
+                        contentDescription = "Watering Options"
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = waterMenuExpanded,
+                    onDismissRequest = { waterMenuExpanded = false }
+                ) {
+                    //MANUAL WATERING WITH SELECTION
+                    //Activates selection mode so that the user can select what plants need watering
+                    DropdownMenuItem(
+                        text = { Text("Select & Water") },
+                        onClick = {
+                            waterMenuExpanded = false
+                            isWaterSelectMode = true
+                            selectedPlantIds = emptySet()
+                        }
+                    )
+
+                    //AUTOMATIC WATERING
+                    //Waters all plants in need of water
+                    DropdownMenuItem(
+                        text = { Text("Water All Due") },
+                        onClick = {
+                            waterMenuExpanded = false
+
+                            val dueIds = userPlantList
+                                .filter { needsWatering(it.lastTimeWatered, it.wateringInterval) }
+                                .map { it.id }
+
+                            if (dueIds.isEmpty()) {
+                                scope.launch {
+                                    snackbarHostState.showSnackbar("Nothing needs watering.")
+                                }
+                            } else {
+                                onWaterSelected(dueIds) // DB-uppdatering sker här
+                                scope.launch {
+                                    snackbarHostState.showSnackbar("Watered ${dueIds.size} plants.")
+                                }
+                            }
+                        }
+                    )
+                }
             }
-            // 4) Add plant – din befintliga navigation till Discover
+
+            //ADD PLANT
+            //Navigates to the DiscoverScreen to add a new plant
             FloatingActionButton(
                 onClick = { onNavigateToDiscover() },
                 containerColor = Color(0xFF4CAF50),
