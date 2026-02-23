@@ -106,6 +106,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CardDefaults
 import androidx.compose.ui.platform.testTag
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import se.mau.grupp7.happyplant2.model.PestDisease
@@ -135,6 +137,7 @@ fun MainScreen(viewModel: PlantViewModel) {
     val userPlants by viewModel.userPlants.collectAsState()
     val suggestions by viewModel.suggestions.collectAsState()
     val diseaseList by viewModel.diseaseList.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
     val context = LocalContext.current
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -217,7 +220,8 @@ fun MainScreen(viewModel: PlantViewModel) {
                                             Toast.LENGTH_SHORT
                                         ).show()
                                     }
-                                }
+                                },
+                                isLoading = isLoading
                             )
                         }
 
@@ -473,7 +477,8 @@ fun DiscoverSearchScreen(
     diseases: List<PestDisease>,
     onSearchPlants: (String) -> Unit,
     onLoadDiseases: () -> Unit,
-    onAdd: (PlantDetails, Int) -> Unit
+    onAdd: (PlantDetails, Int) -> Unit,
+    isLoading: Boolean
 ) {
     var mode by rememberSaveable { mutableStateOf(SearchMode.PLANTS) }
     var text by rememberSaveable { mutableStateOf("") }
@@ -532,11 +537,13 @@ fun DiscoverSearchScreen(
                         text = s
                         onSearchPlants(s)
                     },
-                    onAdd = { plant, days -> onAdd(plant, days) }
+                    onAdd = { plant, days -> onAdd(plant, days) },
+                    isLoading = isLoading
                 )
 
                 SearchMode.DIAGNOSES -> DiagnosesDiscoverContent(
-                    diseases = filteredDiseases
+                    diseases = filteredDiseases,
+                    isLoading = isLoading
                 )
             }
         }
@@ -587,185 +594,189 @@ private fun SearchModePills(
 
 @Composable
 fun DiagnosesDiscoverContent(
-    diseases: List<PestDisease>
+    diseases: List<PestDisease>,
+    isLoading: Boolean
 ) {
     var selectedDisease by remember { mutableStateOf<PestDisease?>(null) }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(8.dp),
-            modifier = Modifier.fillMaxSize()
-        ) {
-            items(diseases) { disease ->
-                DiseaseCard(disease) { clicked ->
-                    selectedDisease = clicked
+
+        if (isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = Color.White)
+            }
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                contentPadding = PaddingValues(8.dp),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                items(diseases) { disease ->
+                    DiseaseCard(disease) { clicked ->
+                        selectedDisease = clicked
+                    }
                 }
             }
         }
 
         // Dialog for details
         selectedDisease?.let { disease ->
-            AlertDialog(
-                onDismissRequest = { selectedDisease = null },
-                confirmButton = {
-                    TextButton(onClick = { selectedDisease = null }) {
-                        Text("Close")
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1F1F1F)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    Text(
+                        text = disease.common_name ?: "Unknown",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.White.copy(alpha = 0.9f)
+                    )
+                    disease.scientific_name?.let {
+                        Text(
+                            it,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
                     }
-                },
-                title = {
-                    Text(disease.common_name ?: "Unknown")
-                },
-                text = {
-                    Column(
-                        modifier = Modifier
-                            .verticalScroll(rememberScrollState())
-                    ) {
-                        // Scientific name
-                        disease.scientific_name?.let {
-                            Text(it, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+
+                    if (!disease.description.isNullOrEmpty()) {
+                        Text("Description", style = MaterialTheme.typography.titleMedium, color = Color.White.copy(alpha = 0.9f))
+                        Spacer(modifier = Modifier.height(4.dp))
+                        disease.description.forEach { section ->
+                            Text(
+                                text = "${section.subtitle ?: ""}\n${section.description ?: ""}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.White
+                            )
                             Spacer(modifier = Modifier.height(8.dp))
                         }
+                    }
 
-                        // Description section
-                        if (!disease.description.isNullOrEmpty()) {
+                    if (!disease.solution.isNullOrEmpty()) {
+                        Text("Solution", style = MaterialTheme.typography.titleMedium, color = Color.White.copy(alpha = 0.9f))
+                        Spacer(modifier = Modifier.height(4.dp))
+                        disease.solution.forEach { section ->
                             Text(
-                                "Description",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = Color(0xFF3F51B5)
+                                text = "${section.subtitle ?: ""}\n${section.description ?: ""}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.White
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
-
-                            disease.description.forEach { section ->
-                                Text(
-                                    text = "${section.subtitle ?: ""}\n${section.description ?: ""}",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                            }
-                        }
-
-                        // Solution section
-                        if (!disease.solution.isNullOrEmpty()) {
-                            Text(
-                                "Solution",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = Color(0xFF4CAF50)
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-
-                            disease.solution.forEach { section ->
-                                Text(
-                                    text = "${section.subtitle ?: ""}\n${section.description ?: ""}",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                            }
+                            Spacer(modifier = Modifier.height(8.dp))
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TextButton(onClick = { selectedDisease = null }) {
+                        Text("Close", color = Color.White)
+                    }
                 }
-            )
+            }
         }
     }
 }
-
 
 @Composable
 fun PlantDiscoverContent(
     plantTypes: List<PlantDetails>,
     suggestions: List<String>,
     onSuggestionClick: (String) -> Unit,
-    onAdd: (PlantDetails, Int) -> Unit
+    onAdd: (PlantDetails, Int) -> Unit,
+    isLoading: Boolean
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var selectedPlant by remember { mutableStateOf<PlantDetails?>(null) }
     var daysAgoText by remember { mutableStateOf("0") }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize()) {
 
-        if (suggestions.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Did you mean:",
-                color = Color.White,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
+        if (isLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = Color.White)
+            }
+        } else {
+            Column(modifier = Modifier.fillMaxSize()) {
 
-            Spacer(modifier = Modifier.height(6.dp))
-
-            Row(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                suggestions.forEach { s ->
-                    Button(onClick = { onSuggestionClick(s) }) {
-                        Text(s)
+                if (suggestions.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Did you mean:",
+                        color = Color.White,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        suggestions.forEach { s ->
+                            Button(onClick = { onSuggestionClick(s) }) {
+                                Text(s)
+                            }
+                        }
                     }
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
-            }
 
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(8.dp),
-            modifier = Modifier.weight(1f)
-        ) {
-            items(plantTypes) { plantType ->
-                PlantCard(
-                    plantType,
-                    onAdd = {
-                        selectedPlant = plantType
-                        daysAgoText = "0"
-                        showDialog = true
-                    }
-                )
-            }
-        }
-
-        if (showDialog && selectedPlant != null) {
-
-            AlertDialog(
-                onDismissRequest = { showDialog = false },
-                title = { Text("When was it last watered?") },
-                text = {
-                    Column {
-                        Text("Enter number of days ago (0 = today)")
-                        Spacer(modifier = Modifier.height(8.dp))
-                        TextField(
-                            value = daysAgoText,
-                            onValueChange = {
-                                if (it.all { char -> char.isDigit() }) {
-                                    daysAgoText = it
-                                }
-                            },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Number
-                            )
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    contentPadding = PaddingValues(8.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    items(plantTypes) { plantType ->
+                        PlantCard(
+                            plantType,
+                            onAdd = {
+                                selectedPlant = plantType
+                                daysAgoText = "0"
+                                showDialog = true
+                            }
                         )
                     }
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            val days = daysAgoText.toIntOrNull() ?: 0
-                            onAdd(selectedPlant!!, days)
-                            showDialog = false
-                        }
-                    ) {
-                        Text("Add Plant")
-                    }
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = { showDialog = false }
-                    ) {
-                        Text("Cancel")
-                    }
                 }
-            )
+
+                if (showDialog && selectedPlant != null) {
+                    AlertDialog(
+                        onDismissRequest = { showDialog = false },
+                        title = { Text("When was it last watered?") },
+                        text = {
+                            Column {
+                                Text("Enter number of days ago (0 = today)")
+                                Spacer(modifier = Modifier.height(8.dp))
+                                TextField(
+                                    value = daysAgoText,
+                                    onValueChange = {
+                                        if (it.all { char -> char.isDigit() }) daysAgoText = it
+                                    },
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                                )
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    val days = daysAgoText.toIntOrNull() ?: 0
+                                    onAdd(selectedPlant!!, days)
+                                    showDialog = false
+                                }
+                            ) { Text("Add Plant") }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showDialog = false }) { Text("Cancel") }
+                        }
+                    )
+                }
+            }
         }
     }
 }
@@ -783,7 +794,11 @@ fun PlantCard(plantDetails: PlantDetails, onAdd: (PlantDetails) -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(140.dp),
-                contentScale = ContentScale.Crop
+                contentScale = ContentScale.Crop,
+                placeholder = painterResource(R.drawable.plant_placeholder),
+                error = painterResource(R.drawable.plant_placeholder),
+                fallback = painterResource(R.drawable.plant_placeholder)
+
             )
 
             Box(
@@ -822,8 +837,6 @@ fun DiseaseCard(
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-
-            // First image (if available)
             disease.images?.firstOrNull()?.medium_url?.let { url ->
                 AsyncImage(
                     model = url,
@@ -831,7 +844,9 @@ fun DiseaseCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .wrapContentHeight(),
-                    contentScale = ContentScale.Crop
+                    contentScale = ContentScale.Crop,
+                    error = painterResource(R.drawable.plant_placeholder),
+                    fallback = painterResource(R.drawable.plant_placeholder)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
             }
