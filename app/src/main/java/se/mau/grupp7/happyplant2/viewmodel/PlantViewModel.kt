@@ -23,6 +23,8 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
     private val _diseaseList = MutableStateFlow<List<PestDisease>>(emptyList())
     val diseaseList: StateFlow<List<PestDisease>> = _diseaseList
     private var diseasesLoaded = false
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading
 
     val userPlants: StateFlow<List<UserPlant>> =
         localRepository.plants
@@ -52,16 +54,15 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
     val suggestions: StateFlow<List<String>> = _suggestions
 
     fun getFlowers(query: String) {
-
         val q = query.trim()
-        if(q.isBlank()) {
+        if (q.isBlank()) {
             _flowerList.value = emptyList()
-            _suggestions .value = emptyList()
+            _suggestions.value = emptyList()
             return
         }
-        Log.d("HP_SEARCH", "getFlowers('$q')")
 
         viewModelScope.launch {
+            _isLoading.value = true
             try {
                 val response = remoteRepository.getSpecies(query)
                 val mapped = response.data.map { ft ->
@@ -74,38 +75,32 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
                         imageUrl = ft.default_image?.regular_url ?: ""
                     )
                 }
-                Log.d("HP_SEARCH", "API returned ${response.data.size} items for '$q'")
+                _flowerList.value = rankPlants(mapped, q)
 
-
-                val ranked = rankPlants(mapped, q)
-                _flowerList.value = ranked
-                Log.d("HP_SEARCH", "ranked size = ${ranked.size}")
-
-
-                _suggestions.value = if(ranked.isEmpty()) {
+                _suggestions.value = if (_flowerList.value.isEmpty()) {
                     suggestQuery(q, popularPlants, maxDistance = 2)
-                } else{
-                    emptyList()
-                }
+                } else emptyList()
             } catch (e: Exception) {
-                Log.e("HP_SEARCH", "Search failed for query='$q'", e)
                 _flowerList.value = emptyList()
                 _suggestions.value = emptyList()
+            } finally {
+                _isLoading.value = false
             }
         }
     }
 
     fun getDiseases() {
-        // Prevent reloading if already fetched
         if (diseasesLoaded) return
         viewModelScope.launch {
+            _isLoading.value = true
             try {
                 val diseases = remoteRepository.getPestDiseases()
                 _diseaseList.value = diseases
                 diseasesLoaded = true
             } catch (e: Exception) {
-                println("ERROR: ${e.message}")
                 _diseaseList.value = emptyList()
+            } finally {
+                _isLoading.value = false
             }
         }
     }
