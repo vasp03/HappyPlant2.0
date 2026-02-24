@@ -1,139 +1,87 @@
 package se.mau.grupp7.happyplant2
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import org.junit.Assert
-import org.junit.Before
+import org.junit.Assert.assertEquals
 import org.junit.Test
 import se.mau.grupp7.happyplant2.model.PlantDetails
-import se.mau.grupp7.happyplant2.oldfiles.PlantType
-import se.mau.grupp7.happyplant2.viewmodel.PlantViewModel
+import se.mau.grupp7.happyplant2.model.UserPlant
+import se.mau.grupp7.happyplant2.model.WaterAmount
+import java.util.Date
 
 class UnitTest {
-    @OptIn(ExperimentalCoroutinesApi::class)
-    @Before
-    fun setUp() {
-    }
 
     @Test
-    fun plantTypeTest() {
-        val name = "Rose"
-        val description = "Rose is a plant."
-        val url = "http://url.url"
-
-        val plantData = PlantType(name, description, url)
-
-        Assert.assertEquals("Name: ", name, plantData.name)
-        Assert.assertEquals("Description: ", description, plantData.description)
-        Assert.assertEquals("Image URL: ", url, plantData.imageURL)
-    }
-
-    @Test
-    fun plantDetailsTest() {
+    fun plantDetails_initialization_isCorrect() {
         val id = 1
         val name = "Rose"
-        val scientific_name = "Rose but fancy"
-        val genus = "Genus 1"
-        val family = "Family 1"
-        val url = "http://url.url"
+        val scientificName = "Rosa"
+        val genus = "Rosa"
+        val family = "Rosaceae"
+        val url = "http://example.com/rose.jpg"
 
-        val plantDetails = PlantDetails(id, name, scientific_name, genus, family, url)
+        val plantDetails = PlantDetails(id, name, scientificName, genus, family, url)
 
-
-        Assert.assertEquals("ID: ", id.toLong(), plantDetails.id.toLong())
-        Assert.assertEquals("Name: ", name, plantDetails.common_name)
-        Assert.assertEquals("Scientific Name: ", scientific_name, plantDetails.scientific_name)
-        Assert.assertEquals("Genus: ", genus, plantDetails.genus)
-        Assert.assertEquals("Family: ", family, plantDetails.family)
-        Assert.assertEquals("Image URL: ", url, plantDetails.imageUrl)
+        assertEquals(id, plantDetails.id)
+        assertEquals(name, plantDetails.common_name)
+        assertEquals(scientificName, plantDetails.scientific_name)
+        assertEquals(genus, plantDetails.genus)
+        assertEquals(family, plantDetails.family)
+        assertEquals(url, plantDetails.imageUrl)
     }
 
-//    @Test
-//    fun testAdditionToUserPlantCollection() {
-//        val viewModel = PlantViewModel()
-//
-//        val plant1Id = 1
-//        val plant1Name = "Rose"
-//        val plant1SciName = "Rose but fancy"
-//        val plant1Genus = "Genus 1"
-//        val plant1Family = "Family 1"
-//        val plant1Image = "image 1"
-//
-//        val plant2Id = 2
-//        val plant2Name = "Rose 2"
-//        val plant2SciName = "Rose but fancy 2"
-//        val plant2Genus = "Genus 2"
-//        val plant2Family = "Family 2"
-//        val plant2Image = "image 2"
-//
-//        val plant1 = PlantDetails(plant1Id, plant1Name, plant1SciName, plant1Genus, plant1Family, plant1Image)
-//        val plant2 = PlantDetails(plant2Id, plant2Name, plant2SciName, plant2Genus, plant2Family, plant2Image)
-//
-//        viewModel.addPlantToUserCollection(plant1) {
-//        }
-//
-//        viewModel.addPlantToUserCollection(plant2) {
-//        }
-//    }
+    @Test
+    fun userPlant_initialization_isCorrect() {
+        val id = "test-uuid"
+        val name = "My Rose"
+        val commonName = "Rose"
+        val description = "A beautiful flower"
+        val imageUrl = "http://example.com/rose.jpg"
+        val now = Date()
+        
+        val userPlant = UserPlant(
+            id = id,
+            customName = name,
+            name = commonName,
+            description = description,
+            imageURL = imageUrl,
+            wateringIntervalMin = 2,
+            wateringIntervalMax = 5,
+            wateringAmount = WaterAmount.OFTEN,
+            lastTimeWatered = now,
+            category = "Flowers",
+            healthStatus = 5,
+            family = "Rosaceae"
+        )
 
-//    @Test
-//    fun testHealthPercentage() {
-//        val viewModel = PlantViewModel()
-//
-//        val plant1Id = 1
-//        val plant1Name = "Rose"
-//        val plant1SciName = "Rose but fancy"
-//        val plant1Genus = "Genus 1"
-//        val plant1Family = "Family 1"
-//        val plant1Image = "image 1"
-//
-//        val plant2Id = 2
-//        val plant2Name = "Rose 2"
-//        val plant2SciName = "Rose but fancy 2"
-//        val plant2Genus = "Genus 2"
-//        val plant2Family = "Family 2"
-//        val plant2Image = "image 2"
-//
-//        val plant1 = PlantDetails(plant1Id, plant1Name, plant1SciName, plant1Genus, plant1Family, plant1Image)
-//        val plant2 = PlantDetails(plant2Id, plant2Name, plant2SciName, plant2Genus, plant2Family, plant2Image)
-//
-//        viewModel.addPlantToUserCollection(plant1) {
-//        }
-//
-//        viewModel.addPlantToUserCollection(plant2) {
-//        }
-//
-//        val healthPercentage = viewModel.overallHealthPercentage.value
-//        Assert.assertTrue(healthPercentage == 100)
-//    }
+        assertEquals(id, userPlant.id)
+        assertEquals(name, userPlant.customName)
+        assertEquals(commonName, userPlant.name)
+        assertEquals(description, userPlant.description)
+        assertEquals(imageUrl, userPlant.imageURL)
+        assertEquals(2, userPlant.wateringIntervalMin)
+        assertEquals(5, userPlant.wateringIntervalMax)
+        assertEquals(WaterAmount.OFTEN, userPlant.wateringAmount)
+        assertEquals(now, userPlant.lastTimeWatered)
+        assertEquals("Flowers", userPlant.category)
+        assertEquals(5, userPlant.healthStatus)
+        assertEquals("Rosaceae", userPlant.family)
+    }
 
-//    @Test
-//    fun testHealthPercentageBelow100() {
-//        val viewModel = PlantViewModel()
-//
-//        val plant1Id = 1
-//        val plant1Name = "Rose"
-//        val plant1SciName = "Rose but fancy"
-//        val plant1Genus = "Genus 1"
-//        val plant1Family = "Family 1"
-//        val plant1Image = "image 1"
-//
-//        val plant2Id = 2
-//        val plant2Name = "Rose 2"
-//        val plant2SciName = "Rose but fancy 2"
-//        val plant2Genus = "Genus 2"
-//        val plant2Family = "Family 2"
-//        val plant2Image = "image 2"
-//
-//        val plant1 = PlantDetails(plant1Id, plant1Name, plant1SciName, plant1Genus, plant1Family, plant1Image)
-//        val plant2 = PlantDetails(plant2Id, plant2Name, plant2SciName, plant2Genus, plant2Family, plant2Image)
-//
-//        viewModel.addPlantToUserCollection(plant1) {
-//        }
-//
-//        viewModel.addPlantToUserCollection(plant2) {
-//        }
-//
-//        val healthPercentage = viewModel.overallHealthPercentage.value
-//        Assert.assertTrue(healthPercentage == 100)
-//    }
+    @Test
+    fun userPlant_defaultValues_isCorrect() {
+        val now = Date()
+        val userPlant = UserPlant(
+            name = "Rose",
+            description = "Desc",
+            imageURL = "url",
+            wateringIntervalMin = 1,
+            wateringIntervalMax = 3,
+            wateringAmount = WaterAmount.RARELY,
+            lastTimeWatered = now
+        )
+
+        assertEquals("", userPlant.customName)
+        assertEquals(5, userPlant.healthStatus)
+        assertEquals("none", userPlant.defectId)
+        assertEquals("", userPlant.category)
+    }
 }
