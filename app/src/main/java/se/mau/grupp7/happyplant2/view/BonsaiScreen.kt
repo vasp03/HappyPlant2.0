@@ -2,6 +2,7 @@ package se.mau.grupp7.happyplant2.view
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -52,11 +53,14 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import se.mau.grupp7.happyplant2.R
+import se.mau.grupp7.happyplant2.model.UserPlant
 
 @Composable
 fun BonsaiScreen(viewModel: PlantViewModel) {
     var isCalendarVisible by remember { mutableStateOf(false) }
     val healthPercentage by viewModel.overallHealthPercentage.collectAsStateWithLifecycle()
+    val userPlants by viewModel.userPlants.collectAsStateWithLifecycle()
+    var selectedDate by remember { mutableStateOf<Date?>(null) }
 
     val bonsaiRes = when {
         healthPercentage >= 90 -> R.drawable.bonsai_100_ai
@@ -159,14 +163,25 @@ fun BonsaiScreen(viewModel: PlantViewModel) {
             CalendarView(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .padding(top = 80.dp)
+                    .padding(top = 80.dp),
+                userPlants = userPlants,
+                onDayClick = { date -> selectedDate = date }
             )
+        }
+
+        if (selectedDate != null) {
+            // Self-note --> Alper:
+            // Popup kommer att implementeras här
         }
     }
 }
 
 @Composable
-fun CalendarView(modifier: Modifier = Modifier) {
+fun CalendarView(
+    modifier: Modifier = Modifier,
+    userPlants: List<UserPlant>,
+    onDayClick: (Date) -> Unit
+) {
     val calendar = Calendar.getInstance()
     val dates = (0..30).map {
         val newDate = calendar.clone() as Calendar
@@ -174,30 +189,48 @@ fun CalendarView(modifier: Modifier = Modifier) {
         newDate.time
     }
 
+    val dayMs = 24L * 60L * 60L * 1000L
+
     LazyRow(
         modifier = modifier,
         contentPadding = PaddingValues(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(dates) { date ->
-            val cal = Calendar.getInstance()
-            cal.time = date
+            val anyPlantNeedsWater = userPlants.any { plant ->
+                if (plant.wateringIntervalMin <= 0) return@any false
+                val nextWaterTime = plant.lastTimeWatered.time + plant.wateringIntervalMin.toLong() * dayMs
+                val startOfDate = Calendar.getInstance().apply {
+                    time = date
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }.timeInMillis
+                val endOfDate = startOfDate + dayMs
+                nextWaterTime in startOfDate until endOfDate
+            }
+
             DayItem(
                 date = date,
-                needsWatering = (cal.get(Calendar.DAY_OF_MONTH) % 3 == 0)
+                needsWatering = anyPlantNeedsWater,
+                onClick = { onDayClick(date) }
             )
         }
     }
 }
 
 @Composable
-fun DayItem(date: Date, needsWatering: Boolean) {
+fun DayItem(date: Date, needsWatering: Boolean, onClick: () -> Unit = {}) {
     val dayFormat = SimpleDateFormat("EEE", Locale.getDefault())
     val dateFormat = SimpleDateFormat("dd", Locale.getDefault())
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
+            .clickable {
+                onClick()
+            }
             .background(Color.White.copy(alpha = 0.8f), RoundedCornerShape(8.dp))
             .padding(8.dp)
     ) {
