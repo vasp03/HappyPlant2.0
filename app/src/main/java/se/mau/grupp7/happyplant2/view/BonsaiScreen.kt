@@ -54,6 +54,16 @@ import java.util.Date
 import java.util.Locale
 import se.mau.grupp7.happyplant2.R
 import se.mau.grupp7.happyplant2.model.UserPlant
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.Row
 
 @Composable
 fun BonsaiScreen(viewModel: PlantViewModel) {
@@ -91,7 +101,6 @@ fun BonsaiScreen(viewModel: PlantViewModel) {
                     .fillMaxWidth()
             ) {
 
-                // SHADOW LAYER
                 Image(
                     painter = BitmapPainter(
                         ImageBitmap.imageResource(id = bonsaiRes),
@@ -112,7 +121,6 @@ fun BonsaiScreen(viewModel: PlantViewModel) {
                         .graphicsLayer(clip = false)
                 )
 
-                // MAIN IMAGE
                 Image(
                     painter = BitmapPainter(
                         ImageBitmap.imageResource(id = bonsaiRes),
@@ -170,8 +178,11 @@ fun BonsaiScreen(viewModel: PlantViewModel) {
         }
 
         if (selectedDate != null) {
-            // Self-note --> Alper:
-            // Popup kommer att implementeras här
+            DayPopup(
+                selectedDate = selectedDate!!,
+                userPlants = userPlants,
+                onDismiss = { selectedDate = null }
+            )
         }
     }
 }
@@ -247,4 +258,121 @@ fun DayItem(date: Date, needsWatering: Boolean, onClick: () -> Unit = {}) {
             Spacer(Modifier.size(16.dp).padding(top = 4.dp))
         }
     }
+}
+
+@Composable
+fun DayPopup(
+    selectedDate: Date,
+    userPlants: List<UserPlant>,
+    onDismiss: () -> Unit
+) {
+    var showUpcoming by remember { mutableStateOf(false) }
+
+    val dayMs = 24L * 60L * 60L * 1000L
+
+    fun plantsNeedingWaterOn(date: Date): List<UserPlant> {
+        val startOfDay = Calendar.getInstance().apply {
+            time = date
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+        val endOfDay = startOfDay + dayMs
+
+        return userPlants.filter { plant ->
+            if (plant.wateringIntervalMin <= 0) return@filter false
+            val nextWaterTime = plant.lastTimeWatered.time + plant.wateringIntervalMin.toLong() * dayMs
+            nextWaterTime in startOfDay until endOfDay
+        }
+    }
+
+    val todayPlants = plantsNeedingWaterOn(selectedDate)
+
+    val upcomingPlants = remember(selectedDate, userPlants) {
+        val result = mutableListOf<Pair<Date, UserPlant>>()
+        for (i in 1..29) {
+            val futureDate = Date(selectedDate.time + i * dayMs)
+            val plants = plantsNeedingWaterOn(futureDate)
+            plants.forEach { plant ->
+                result.add(futureDate to plant)
+            }
+        }
+        result
+    }
+
+    val dateFormat = SimpleDateFormat("EEE dd MMM", Locale.getDefault())
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = dateFormat.format(selectedDate),
+                style = MaterialTheme.typography.headlineSmall
+            )
+        },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = { showUpcoming = false },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (!showUpcoming) Color(0xFF3A8DFF) else Color.Gray
+                        ),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Dagens", fontSize = 12.sp)
+                    }
+                    Button(
+                        onClick = { showUpcoming = true },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (showUpcoming) Color(0xFF3A8DFF) else Color.Gray
+                        ),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Kommande", fontSize = 12.sp)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                if (!showUpcoming) {
+                    if (todayPlants.isEmpty()) {
+                        Text("Inga växter behöver vattnas denna dag.")
+                    } else {
+                        todayPlants.forEach { plant ->
+                            Text(
+                                text = "💧 ${plant.customName.ifEmpty { plant.name }}",
+                                modifier = Modifier.padding(vertical = 4.dp)
+                            )
+                        }
+                    }
+                } else {
+                    if (upcomingPlants.isEmpty()) {
+                        Text("Inga bevattningar de kommande 29 dagarna.")
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.heightIn(max = 300.dp)
+                        ) {
+                            items(upcomingPlants) { (date, plant) ->
+                                Text(
+                                    text = "💧 ${dateFormat.format(date)} — ${plant.customName.ifEmpty { plant.name }}",
+                                    modifier = Modifier.padding(vertical = 4.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Stäng")
+            }
+        }
+    )
 }
