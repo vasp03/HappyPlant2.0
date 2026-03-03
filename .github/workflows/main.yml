@@ -56,7 +56,8 @@ jobs:
           arch: x86_64
           profile: pixel_6
           emulator-options: '-no-window -no-audio -gpu swiftshader_indirect'
-          script: ./gradlew connectedDebugAndroidTest   
+          wait-for-boot: true 
+          script: ./gradlew connectedDebugAndroidTest  
     
   # DEL 2: CD - Meddelande vid merge till Main
   Deploy-message:
