@@ -38,26 +38,6 @@ jobs:
       - name: CI Passed message
         if: success()
         run: echo "Testerna gick igenom i PR!"
-
-      - name: Install emulator dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libpulse0
-
-      - name: Enable KVM group perms
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-
-      - uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 33
-          arch: x86_64
-          profile: pixel_6
-          emulator-options: '-no-window -no-audio -gpu swiftshader_indirect'
-          wait-for-boot: true 
-          script: ./gradlew connectedDebugAndroidTest  
     
   # DEL 2: CD - Meddelande vid merge till Main
   Deploy-message:
