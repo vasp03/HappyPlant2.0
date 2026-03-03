@@ -65,7 +65,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.width
-
+import se.mau.grupp7.happyplant2.view.theme.PurpleGrey40
 @Composable
 fun BonsaiScreen(viewModel: PlantViewModel) {
     var isCalendarVisible by remember { mutableStateOf(false) }
@@ -288,6 +288,7 @@ fun DayPopup(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surface,
         title = {
             Text(
                 text = dateFormat.format(selectedDate),
@@ -304,8 +305,7 @@ fun DayPopup(
                     Button(
                         onClick = { showUpcoming = false },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (!showUpcoming) Color(0xFF3A8DFF) else Color.Gray
-                        ),
+                            containerColor = if (!showUpcoming) MaterialTheme.colorScheme.primary else PurpleGrey40                        ),
                         modifier = Modifier.weight(1f)
                     ) {
                         Text("Dagens", fontSize = 12.sp)
@@ -313,8 +313,7 @@ fun DayPopup(
                     Button(
                         onClick = { showUpcoming = true },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (showUpcoming) Color(0xFF3A8DFF) else Color.Gray
-                        ),
+                            containerColor = if (showUpcoming) MaterialTheme.colorScheme.primary else PurpleGrey40                        ),
                         modifier = Modifier.weight(1f)
                     ) {
                         Text("Kommande", fontSize = 12.sp)
@@ -325,18 +324,19 @@ fun DayPopup(
 
                 if (!showUpcoming) {
                     if (todayPlants.isEmpty()) {
-                        Text("Inga växter behöver vattnas denna dag.")
+                        Text("Inga växter behöver vattnas denna dag.", color = MaterialTheme.colorScheme.onSurface)
                     } else {
                         todayPlants.forEach { plant ->
                             Text(
                                 text = "💧 ${plant.customName.ifEmpty { plant.name }}",
+                                color = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.padding(vertical = 4.dp)
                             )
                         }
                     }
                 } else {
                     if (upcomingPlants.isEmpty()) {
-                        Text("Inga bevattningar de kommande 29 dagarna.")
+                        Text("Inga bevattningar de kommande 29 dagarna.", color = MaterialTheme.colorScheme.onSurface)
                     } else {
                         LazyColumn(
                             modifier = Modifier.heightIn(max = 300.dp)
@@ -344,6 +344,7 @@ fun DayPopup(
                             items(upcomingPlants) { (date, plant) ->
                                 Text(
                                     text = "💧 ${dateFormat.format(date)} — ${plant.customName.ifEmpty { plant.name }}",
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     modifier = Modifier.padding(vertical = 4.dp)
                                 )
                             }
@@ -354,8 +355,7 @@ fun DayPopup(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Stäng")
-            }
+                Text("Stäng", color = MaterialTheme.colorScheme.primary)            }
         }
     )
 }
