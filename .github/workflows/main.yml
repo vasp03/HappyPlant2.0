@@ -39,6 +39,12 @@ jobs:
         if: success()
         run: echo "Testerna gick igenom i PR!"
 
+      - name: Run Instrumented Tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          script: ./gradlew connectedDebugAndroidTest
+
   # DEL 2: CD - Meddelande vid merge till Main
   Deploy-message:
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
