@@ -38,7 +38,7 @@ jobs:
       - name: CI Passed message
         if: success()
         run: echo "Testerna gick igenom i PR!"
-
+    
   # DEL 2: CD - Meddelande vid merge till Main
   Deploy-message:
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
