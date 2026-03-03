@@ -66,6 +66,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.width
 import se.mau.grupp7.happyplant2.view.theme.PurpleGrey40
+
+private const val DAY_MS = 24L * 60L * 60L * 1000L
+
 @Composable
 fun BonsaiScreen(viewModel: PlantViewModel) {
     var isCalendarVisible by remember { mutableStateOf(false) }
@@ -196,14 +199,14 @@ fun CalendarView(
     selectedDate: Date?,
     onDayClick: (Date) -> Unit
 ) {
-    val calendar = Calendar.getInstance()
-    val dates = (0..30).map {
-        val newDate = calendar.clone() as Calendar
-        newDate.add(Calendar.DAY_OF_YEAR, it)
-        newDate.time
+    val dates = remember {
+        val calendar = Calendar.getInstance()
+        (0..30).map {
+            val newDate = calendar.clone() as Calendar
+            newDate.add(Calendar.DAY_OF_YEAR, it)
+            newDate.time
+        }
     }
-
-    val dayMs = 24L * 60L * 60L * 1000L
 
     LazyRow(
         modifier = modifier,
@@ -216,7 +219,7 @@ fun CalendarView(
             DayItem(
                 date = date,
                 needsWatering = anyPlantNeedsWater,
-                isSelected = selectedDate != null && SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(date) == SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(selectedDate),
+                isSelected = isSameDay(date, selectedDate),
                 onClick = { onDayClick(date) }
             )
         }
@@ -224,9 +227,9 @@ fun CalendarView(
 }
 
 @Composable
-fun DayItem(date: Date, needsWatering: Boolean, isSelected: Boolean, onClick: () -> Unit = {}) {
-    val dayFormat = SimpleDateFormat("EEE", Locale.getDefault())
-    val dateFormat = SimpleDateFormat("dd", Locale.getDefault())
+fun DayItem(date: Date, needsWatering: Boolean, isSelected: Boolean, onClick: () -> Unit) {
+    val dayFormat = remember {SimpleDateFormat("EEE", Locale.getDefault())}
+    val dateFormat = remember {SimpleDateFormat("dd", Locale.getDefault())}
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -236,7 +239,7 @@ fun DayItem(date: Date, needsWatering: Boolean, isSelected: Boolean, onClick: ()
                 onClick()
             }
             .background(
-                if (isSelected) Color(0xFF3A8DFF).copy(alpha = 0.9f)
+                if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.9f)
                 else Color.White.copy(alpha = 0.8f),
                 RoundedCornerShape(8.dp)
             )
@@ -268,14 +271,14 @@ fun DayPopup(
 ) {
     var showUpcoming by remember { mutableStateOf(false) }
 
-    val dayMs = 24L * 60L * 60L * 1000L
-
-    val todayPlants = plantsNeedingWaterOn(selectedDate, userPlants)
+    val todayPlants = remember(selectedDate, userPlants) {
+        plantsNeedingWaterOn(selectedDate, userPlants)
+    }
 
     val upcomingPlants = remember(selectedDate, userPlants) {
         val result = mutableListOf<Pair<Date, UserPlant>>()
         for (i in 1..29) {
-            val futureDate = Date(selectedDate.time + i * dayMs)
+            val futureDate = Date(selectedDate.time + i * DAY_MS)
             val plants = plantsNeedingWaterOn(futureDate, userPlants)
             plants.forEach { plant ->
                 result.add(futureDate to plant)
@@ -284,7 +287,7 @@ fun DayPopup(
         result
     }
 
-    val dateFormat = SimpleDateFormat("EEE dd MMM", Locale.getDefault())
+    val dateFormat = remember {SimpleDateFormat("EEE dd MMM", Locale.getDefault())}
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -305,7 +308,7 @@ fun DayPopup(
                     Button(
                         onClick = { showUpcoming = false },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (!showUpcoming) MaterialTheme.colorScheme.primary else PurpleGrey40                        ),
+                            containerColor = if (!showUpcoming) MaterialTheme.colorScheme.primary else PurpleGrey40),
                         modifier = Modifier.weight(1f)
                     ) {
                         Text("Dagens", fontSize = 12.sp)
@@ -313,7 +316,7 @@ fun DayPopup(
                     Button(
                         onClick = { showUpcoming = true },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (showUpcoming) MaterialTheme.colorScheme.primary else PurpleGrey40                        ),
+                            containerColor = if (showUpcoming) MaterialTheme.colorScheme.primary else PurpleGrey40),
                         modifier = Modifier.weight(1f)
                     ) {
                         Text("Kommande", fontSize = 12.sp)
@@ -355,7 +358,8 @@ fun DayPopup(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Stäng", color = MaterialTheme.colorScheme.primary)            }
+                Text("Stäng", color = MaterialTheme.colorScheme.primary)
+            }
         }
     )
 }
@@ -364,7 +368,6 @@ private fun plantsNeedingWaterOn(
     date: Date,
     userPlants: List<UserPlant>
 ): List<UserPlant> {
-    val dayMs = 24L * 60L * 60L * 1000L
 
     val startOfDay = Calendar.getInstance().apply {
         time = date
@@ -385,10 +388,18 @@ private fun plantsNeedingWaterOn(
             set(Calendar.MILLISECOND, 0)
         }.timeInMillis
 
-        val daysSinceWatered = ((startOfDay - lastWateredDay) / dayMs).toInt()
+        val daysSinceWatered = ((startOfDay - lastWateredDay) / DAY_MS).toInt()
 
         if (daysSinceWatered <= 0) return@filter false
 
         daysSinceWatered % plant.wateringIntervalMin == 0
     }
+}
+
+private fun isSameDay(date1: Date, date2: Date?): Boolean {
+    if (date2 == null) return false
+    val cal1 = Calendar.getInstance().apply { time = date1 }
+    val cal2 = Calendar.getInstance().apply { time = date2 }
+    return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
+            cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
 }
