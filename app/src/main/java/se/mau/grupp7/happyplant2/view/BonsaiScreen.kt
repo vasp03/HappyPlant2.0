@@ -64,6 +64,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.width
 
 @Composable
 fun BonsaiScreen(viewModel: PlantViewModel) {
@@ -173,6 +174,7 @@ fun BonsaiScreen(viewModel: PlantViewModel) {
                     .align(Alignment.TopCenter)
                     .padding(top = 80.dp),
                 userPlants = userPlants,
+                selectedDate = selectedDate,
                 onDayClick = { date -> selectedDate = date }
             )
         }
@@ -191,6 +193,7 @@ fun BonsaiScreen(viewModel: PlantViewModel) {
 fun CalendarView(
     modifier: Modifier = Modifier,
     userPlants: List<UserPlant>,
+    selectedDate: Date?,
     onDayClick: (Date) -> Unit
 ) {
     val calendar = Calendar.getInstance()
@@ -225,6 +228,7 @@ fun CalendarView(
             DayItem(
                 date = date,
                 needsWatering = anyPlantNeedsWater,
+                isSelected = selectedDate != null && SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(date) == SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(selectedDate),
                 onClick = { onDayClick(date) }
             )
         }
@@ -232,30 +236,38 @@ fun CalendarView(
 }
 
 @Composable
-fun DayItem(date: Date, needsWatering: Boolean, onClick: () -> Unit = {}) {
+fun DayItem(date: Date, needsWatering: Boolean, isSelected: Boolean, onClick: () -> Unit = {}) {
     val dayFormat = SimpleDateFormat("EEE", Locale.getDefault())
     val dateFormat = SimpleDateFormat("dd", Locale.getDefault())
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
+            .width(45.dp)
             .clickable {
                 onClick()
             }
-            .background(Color.White.copy(alpha = 0.8f), RoundedCornerShape(8.dp))
-            .padding(8.dp)
+            .background(
+                if (isSelected) Color(0xFF3A8DFF).copy(alpha = 0.9f)
+                else Color.White.copy(alpha = 0.8f),
+                RoundedCornerShape(8.dp)
+            )
     ) {
-        Text(dayFormat.format(date))
-        Text(dateFormat.format(date))
+        Text(dayFormat.format(date), color = if (isSelected) Color.White else Color.Black)
+        Text(dateFormat.format(date), color = if (isSelected) Color.White else Color.Black)
         if (needsWatering) {
             Icon(
                 Icons.Filled.WaterDrop,
                 contentDescription = null,
                 tint = Color.Blue,
-                modifier = Modifier.size(16.dp).padding(top = 4.dp)
+                modifier = Modifier
+                    .size(16.dp)
+                    .padding(top = 4.dp)
             )
         } else {
-            Spacer(Modifier.size(16.dp).padding(top = 4.dp))
+            Spacer(Modifier
+                .size(16.dp)
+                .padding(top = 4.dp))
         }
     }
 }
