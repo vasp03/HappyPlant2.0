@@ -211,19 +211,7 @@ fun CalendarView(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(dates) { date ->
-            val anyPlantNeedsWater = userPlants.any { plant ->
-                if (plant.wateringIntervalMin <= 0) return@any false
-                val nextWaterTime = plant.lastTimeWatered.time + plant.wateringIntervalMin.toLong() * dayMs
-                val startOfDate = Calendar.getInstance().apply {
-                    time = date
-                    set(Calendar.HOUR_OF_DAY, 0)
-                    set(Calendar.MINUTE, 0)
-                    set(Calendar.SECOND, 0)
-                    set(Calendar.MILLISECOND, 0)
-                }.timeInMillis
-                val endOfDate = startOfDate + dayMs
-                nextWaterTime in startOfDate until endOfDate
-            }
+            val anyPlantNeedsWater = plantsNeedingWaterOn(date, userPlants).isNotEmpty()
 
             DayItem(
                 date = date,
@@ -282,30 +270,13 @@ fun DayPopup(
 
     val dayMs = 24L * 60L * 60L * 1000L
 
-    fun plantsNeedingWaterOn(date: Date): List<UserPlant> {
-        val startOfDay = Calendar.getInstance().apply {
-            time = date
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }.timeInMillis
-        val endOfDay = startOfDay + dayMs
-
-        return userPlants.filter { plant ->
-            if (plant.wateringIntervalMin <= 0) return@filter false
-            val nextWaterTime = plant.lastTimeWatered.time + plant.wateringIntervalMin.toLong() * dayMs
-            nextWaterTime in startOfDay until endOfDay
-        }
-    }
-
-    val todayPlants = plantsNeedingWaterOn(selectedDate)
+    val todayPlants = plantsNeedingWaterOn(selectedDate, userPlants)
 
     val upcomingPlants = remember(selectedDate, userPlants) {
         val result = mutableListOf<Pair<Date, UserPlant>>()
         for (i in 1..29) {
             val futureDate = Date(selectedDate.time + i * dayMs)
-            val plants = plantsNeedingWaterOn(futureDate)
+            val plants = plantsNeedingWaterOn(futureDate, userPlants)
             plants.forEach { plant ->
                 result.add(futureDate to plant)
             }
@@ -387,4 +358,37 @@ fun DayPopup(
             }
         }
     )
+}
+
+private fun plantsNeedingWaterOn(
+    date: Date,
+    userPlants: List<UserPlant>
+): List<UserPlant> {
+    val dayMs = 24L * 60L * 60L * 1000L
+
+    val startOfDay = Calendar.getInstance().apply {
+        time = date
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }.timeInMillis
+
+    return userPlants.filter { plant ->
+        if (plant.wateringIntervalMin <= 0) return@filter false
+
+        val lastWateredDay = Calendar.getInstance().apply {
+            time = plant.lastTimeWatered
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+
+        val daysSinceWatered = ((startOfDay - lastWateredDay) / dayMs).toInt()
+
+        if (daysSinceWatered <= 0) return@filter false
+
+        daysSinceWatered % plant.wateringIntervalMin == 0
+    }
 }
