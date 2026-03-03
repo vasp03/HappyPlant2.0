@@ -39,14 +39,26 @@ jobs:
         if: success()
         run: echo "Testerna gick igenom i PR!"
 
+      - name: Enable KVM group perms
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
       - name: Run instrumented tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 34
+          api-level: 29  # Lower to 29 or 30 for faster boot (API 34 is slow in software mode)
           arch: x86_64
-          profile: pixel_4
-          script: ./gradlew connectedDebugAndroidTest
-          
+          profile: pixel_4  # Or try a lighter profile like 'Nexus 6' if pixel_4 is too demanding
+          cores: 4  # Increase to recommended 4 for better performance
+          ram-size: 4096M  # Boost RAM for smoother boot (default is ~2048M)
+          disk-size: 2048M  # Optional: Smaller disk to save resources
+          disable-animations: true  # Speeds up boot by disabling UI animations
+          emulator-boot-timeout: 900  # Increase timeout to 15 minutes if needed
+          emulator-options: -no-snapshot-save -noaudio -no-boot-anim -gpu swiftshader_indirect  # Optimize flags (some are default)
+          script: ./gradlew connectedDebugAndroidTest          
+    
   # DEL 2: CD - Meddelande vid merge till Main
   Deploy-message:
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
