@@ -53,7 +53,7 @@ jobs:
       - name: Run instrumented tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 29  # Lower to 29 or 30 for faster boot (API 34 is slow in software mode)
+          api-level: 33  # Lower to 29 or 30 for faster boot (API 34 is slow in software mode)
           arch: x86_64
           profile: pixel_4  # Or try a lighter profile like 'Nexus 6' if pixel_4 is too demanding
           cores: 4  # Increase to recommended 4 for better performance
