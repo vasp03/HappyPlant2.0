@@ -44,7 +44,8 @@ jobs:
         with:
           api-level: 34
           arch: x86_64
-          profile: Nexus 6
+          profile: pixel_4
+          script: ./gradlew connectedDebugAndroidTest
           
   # DEL 2: CD - Meddelande vid merge till Main
   Deploy-message:
