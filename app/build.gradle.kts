@@ -100,6 +100,9 @@ dependencies {
     implementation("androidx.room:room-ktx:2.8.4")
     ksp("androidx.room:room-compiler:2.8.4")
 
+    // WorkManager (NOTIFICATIONS)
+    implementation("androidx.work:work-runtime-ktx:2.10.1")
+
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
