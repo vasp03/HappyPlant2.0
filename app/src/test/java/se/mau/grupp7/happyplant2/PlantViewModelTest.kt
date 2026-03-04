@@ -8,6 +8,7 @@ import se.mau.grupp7.happyplant2.viewmodel.calculateOverallHealthPercentage
 import java.util.Date
 import se.mau.grupp7.happyplant2.viewmodel.calculateCategories
 import se.mau.grupp7.happyplant2.viewmodel.calculateNewHealth
+import org.junit.Assert.assertNull
 
 
 
@@ -53,6 +54,37 @@ class PlantViewModelTest {
             listOf(userPlantWithHealth(5), userPlantWithHealth(2), userPlantWithHealth(1))
         )
         assertEquals(53, result)
+    }
+
+    @Test
+    fun overallHealth_allZeroHealth_returns0() {
+        val result = calculateOverallHealthPercentage(
+            listOf(userPlantWithHealth(0), userPlantWithHealth(0), userPlantWithHealth(0))
+        )
+        assertEquals(0, result)
+    }
+
+    @Test
+    fun overallHealth_roundsDown_withToInt() {
+        // total is 1, max is 15 => 6.666... => toInt() => 6
+        val result = calculateOverallHealthPercentage(
+            listOf(userPlantWithHealth(1), userPlantWithHealth(0), userPlantWithHealth(0))
+        )
+        assertEquals(6, result)
+    }
+
+    @Test
+    fun overallHealth_mixedValues_returnsExpectedPercentage() {
+        // total is 12, max is 20 => 60
+        val result = calculateOverallHealthPercentage(
+            listOf(
+                userPlantWithHealth(5),
+                userPlantWithHealth(4),
+                userPlantWithHealth(3),
+                userPlantWithHealth(0)
+            )
+        )
+        assertEquals(60, result)
     }
 
     //==========================================================
@@ -203,6 +235,36 @@ class PlantViewModelTest {
     @Test
     fun newHealth_boundaryAtMax() {
         assertEquals(5, calculateNewHealth(0))
+    }
+
+
+    //====== TESTER AV fun getPlantById
+    @Test
+    fun getPlantById_returnsCorrectPlant() {
+        val plant1 = userPlantWithHealth(5).copy(id = "1")
+        val plant2 = userPlantWithHealth(3).copy(id = "2")
+
+        val list = listOf(plant1, plant2)
+
+        val result = list.find {it.id == "2"}
+        assertEquals(plant2, result)
+    }
+
+    @Test
+    fun getPlantById_returnsNullIfNotFound() {
+        val plant = userPlantWithHealth(5).copy(id = "1")
+        val list = listOf(plant)
+        val result = list.find {it.id == "999"}
+
+        assertNull(result)
+    }
+
+    @Test
+    fun getPlantById_handlesEmptyList() {
+        val list = emptyList<UserPlant>()
+        val result = list.find {it.id == "1"}
+
+        assertNull(result)
     }
 
 
