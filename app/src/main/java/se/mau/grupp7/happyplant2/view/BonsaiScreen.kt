@@ -377,6 +377,13 @@ private fun plantsNeedingWaterOn(
         set(Calendar.MILLISECOND, 0)
     }.timeInMillis
 
+    val todayMillis = Calendar.getInstance().apply {
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }.timeInMillis
+
     return userPlants.filter { plant ->
         if (plant.wateringIntervalMin <= 0) return@filter false
 
@@ -391,6 +398,9 @@ private fun plantsNeedingWaterOn(
         val daysSinceWatered = ((startOfDay - lastWateredDay) / DAY_MS).toInt()
 
         if (daysSinceWatered <= 0) return@filter false
+
+        val isOverdue = ((todayMillis - lastWateredDay) / DAY_MS).toInt() >= plant.wateringIntervalMin
+        if (isOverdue && startOfDay == todayMillis) return@filter true
 
         daysSinceWatered % plant.wateringIntervalMin == 0
     }
