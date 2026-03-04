@@ -277,8 +277,12 @@ fun DayPopup(
 
     val upcomingPlants = remember(selectedDate, userPlants) {
         val result = mutableListOf<Pair<Date, UserPlant>>()
+        val calendar = Calendar.getInstance().apply {
+            time = selectedDate
+        }
         for (i in 1..29) {
-            val futureDate = Date(selectedDate.time + i * DAY_MS)
+            calendar.add(Calendar.DAY_OF_YEAR, 1)
+            val futureDate = calendar.time
             val plants = plantsNeedingWaterOn(futureDate, userPlants)
             plants.forEach { plant ->
                 result.add(futureDate to plant)
