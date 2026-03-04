@@ -244,7 +244,7 @@ fun DayItem(date: Date, needsWatering: Boolean, isSelected: Boolean, onClick: ()
                 RoundedCornerShape(8.dp)
             )
     ) {
-        Text(dayFormat.format(date), color = if (isSelected) Color.White else Color.Black)
+        Text(dayFormat.format(date).replaceFirstChar { it.uppercase() }, color = if (isSelected) Color.White else Color.Black)
         Text(dateFormat.format(date), color = if (isSelected) Color.White else Color.Black)
         if (needsWatering) {
             Icon(
@@ -294,7 +294,7 @@ fun DayPopup(
         containerColor = MaterialTheme.colorScheme.surface,
         title = {
             Text(
-                text = dateFormat.format(selectedDate),
+                text = dateFormat.format(selectedDate).split(" ").joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } },
                 style = MaterialTheme.typography.headlineSmall
             )
         },
