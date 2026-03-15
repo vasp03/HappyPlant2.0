@@ -12,12 +12,20 @@ import java.util.Date
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 
-
 private const val MAX_HEALTH = 5
-class PlantViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val remoteRepository = PlantRepository()
-    private val localRepository = LocalPlantRepository(application)
+class PlantViewModel( //constructor used by tests
+    application: Application,
+    private val remoteRepository: PlantRepository = PlantRepository(),   // default = real one
+    private val localRepository: LocalPlantRepository = LocalPlantRepository(application)
+) : AndroidViewModel(application) {
+
+    constructor(application: Application) : this( //constructor used by app
+        application,
+        PlantRepository(),
+        LocalPlantRepository(application)
+    )
+
     private val _flowerList = MutableStateFlow<List<PlantDetails>>(emptyList())
     val flowerList: StateFlow<List<PlantDetails>> = _flowerList
     private val _diseaseList = MutableStateFlow<List<PestDisease>>(emptyList())
@@ -44,7 +52,7 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
         localRepository.plants
             .stateIn(
                 viewModelScope,
-                SharingStarted.WhileSubscribed(5000),
+                SharingStarted.Eagerly,
                 emptyList()
             )
 
@@ -52,14 +60,14 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
         userPlants
             .map { plants ->
                 plants
-                    .map { it.category.trim() }
+                    .map { it.category.trim().replaceFirstChar { char -> char.uppercase() } }
                     .filter { it.isNotBlank() }
                     .distinct()
                     .sorted()
             }
             .stateIn(
                 viewModelScope,
-                SharingStarted.WhileSubscribed(5000),
+                SharingStarted.Eagerly,
                 emptyList()
             )
     private val popularPlants = listOf("rosa", "rose", "lavender", "monstera")
@@ -277,14 +285,14 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
                 val totalHealth =
                     plants.sumOf { it.healthStatus }
 
-                val maxHealth = plants.size * 5
+                val maxHealth = plants.size * MAX_HEALTH
 
                 ((totalHealth.toFloat() / maxHealth) * 100)
                     .toInt()
             }
             .stateIn(
                 viewModelScope,
-                SharingStarted.WhileSubscribed(5000),
+                SharingStarted.Eagerly,
                 100
             )
 
@@ -293,7 +301,7 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
             .map { list -> list.find { it.id == id } }
             .stateIn(
                 viewModelScope,
-                SharingStarted.WhileSubscribed(5000),
+                SharingStarted.Eagerly,
                 null
             )
     }
