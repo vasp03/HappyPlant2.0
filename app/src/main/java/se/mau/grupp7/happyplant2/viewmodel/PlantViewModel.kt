@@ -118,6 +118,7 @@ class PlantViewModel( //constructor used by tests
     fun addPlantToUserCollection(
         plantDetails: PlantDetails,
         daysAgo: Int,
+        onSuccess: () -> Unit,
         onError: () -> Unit
     ) {
         viewModelScope.launch {
@@ -125,6 +126,7 @@ class PlantViewModel( //constructor used by tests
                 withSpinnerAfter100ms {
                     val newPlant = remoteRepository.createUserPlant(plantDetails, daysAgo)
                     localRepository.insert(newPlant)
+                    onSuccess()
                 }
             } catch (_: Exception) {
                 onError()

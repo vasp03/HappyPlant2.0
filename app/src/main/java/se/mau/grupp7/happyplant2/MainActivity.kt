@@ -38,6 +38,10 @@ import se.mau.grupp7.happyplant2.view.theme.HappyPlant2Theme
 import se.mau.grupp7.happyplant2.viewmodel.PlantViewModel
 import se.mau.grupp7.happyplant2.view.BonsaiScreen
 import se.mau.grupp7.happyplant2.view.DiscoverSearchScreen
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableLongStateOf
 
 enum class SearchMode { PLANTS, DIAGNOSES }
 
@@ -67,6 +71,11 @@ fun MainScreen(viewModel: PlantViewModel) {
     val diseaseList by viewModel.diseaseList.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    var lastDetailsToastTime by remember { mutableLongStateOf(0L) }
+
+    LaunchedEffect(Unit) {
+        viewModel.getDiseases()
+    }
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -127,13 +136,24 @@ fun MainScreen(viewModel: PlantViewModel) {
                             onSearchPlants = { viewModel.getFlowers(it) },
                             onLoadDiseases = { viewModel.getDiseases() },
                             onAdd = { plantDetails, daysAgo ->
-                                viewModel.addPlantToUserCollection(plantDetails, daysAgo) {
-                                    Toast.makeText(
-                                        context,
-                                        "Failed to add plant",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
+                                viewModel.addPlantToUserCollection(
+                                    plantDetails,
+                                    daysAgo,
+                                    onSuccess = {
+                                        Toast.makeText(
+                                            context,
+                                            "Plant added",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    },
+                                    onError = {
+                                        Toast.makeText(
+                                            context,
+                                            "Failed to add plant",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                )
                             },
                             isLoading = isLoading
                         )
@@ -148,9 +168,18 @@ fun MainScreen(viewModel: PlantViewModel) {
                             },
                             onUpdateCategory = { plant, newCategory ->
                                 viewModel.updatePlantCategory(plant, newCategory)
-                            },
+                                Toast.makeText(
+                                    context,
+                                    "Category updated",
+                                    Toast.LENGTH_SHORT
+                                ).show()                            },
                             onWaterSelected = { ids ->
                                 viewModel.waterSelectedPlants(ids)
+                                Toast.makeText(
+                                    context,
+                                    "Watered ${ids.size} plants",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
                         )
                     }
@@ -182,14 +211,33 @@ fun MainScreen(viewModel: PlantViewModel) {
                         onWater = { viewModel.waterUserPlant(it) },
                         onCategoryChange = { p, cat ->
                             viewModel.updatePlantCategory(p, cat)
+                            Toast.makeText(
+                                context,
+                                "Category updated",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         },
                         onDefectChange = { p, defect ->
                             viewModel.updatePlantDefect(p, defect)
+                            Toast.makeText(
+                                context,
+                                "Defect updated",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         },
                         onDetailsChange = { p, customName, potType, height, notes ->
                             viewModel.updatePlantDetails(
                                 p, customName, potType, height, notes
                             )
+                            val now = System.currentTimeMillis()
+                            if (now - lastDetailsToastTime > 1500) {
+                                Toast.makeText(
+                                    context,
+                                    "Plant details saved",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                lastDetailsToastTime = now
+                            }
                         },
                         onImageChange = { plant, uri ->
                             viewModel.updatePlantImage(plant, uri)
