@@ -2,6 +2,7 @@ package se.mau.grupp7.happyplant2.view
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -52,11 +53,28 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import se.mau.grupp7.happyplant2.R
+import se.mau.grupp7.happyplant2.model.UserPlant
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.width
+import se.mau.grupp7.happyplant2.view.theme.PurpleGrey40
+
+private const val DAY_MS = 24L * 60L * 60L * 1000L
 
 @Composable
 fun BonsaiScreen(viewModel: PlantViewModel) {
     var isCalendarVisible by remember { mutableStateOf(false) }
     val healthPercentage by viewModel.overallHealthPercentage.collectAsStateWithLifecycle()
+    val userPlants by viewModel.userPlants.collectAsStateWithLifecycle()
+    var selectedDate by remember { mutableStateOf<Date?>(null) }
 
     val bonsaiRes = when {
         healthPercentage >= 90 -> R.drawable.bonsai_100_ai
@@ -87,7 +105,6 @@ fun BonsaiScreen(viewModel: PlantViewModel) {
                     .fillMaxWidth()
             ) {
 
-                // SHADOW LAYER
                 Image(
                     painter = BitmapPainter(
                         ImageBitmap.imageResource(id = bonsaiRes),
@@ -108,7 +125,6 @@ fun BonsaiScreen(viewModel: PlantViewModel) {
                         .graphicsLayer(clip = false)
                 )
 
-                // MAIN IMAGE
                 Image(
                     painter = BitmapPainter(
                         ImageBitmap.imageResource(id = bonsaiRes),
@@ -159,19 +175,37 @@ fun BonsaiScreen(viewModel: PlantViewModel) {
             CalendarView(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .padding(top = 80.dp)
+                    .padding(top = 80.dp),
+                userPlants = userPlants,
+                selectedDate = selectedDate,
+                onDayClick = { date -> selectedDate = date }
+            )
+        }
+
+        if (selectedDate != null) {
+            DayPopup(
+                selectedDate = selectedDate!!,
+                userPlants = userPlants,
+                onDismiss = { selectedDate = null }
             )
         }
     }
 }
 
 @Composable
-fun CalendarView(modifier: Modifier = Modifier) {
-    val calendar = Calendar.getInstance()
-    val dates = (0..30).map {
-        val newDate = calendar.clone() as Calendar
-        newDate.add(Calendar.DAY_OF_YEAR, it)
-        newDate.time
+fun CalendarView(
+    modifier: Modifier = Modifier,
+    userPlants: List<UserPlant>,
+    selectedDate: Date?,
+    onDayClick: (Date) -> Unit
+) {
+    val dates = remember {
+        val calendar = Calendar.getInstance()
+        (0..30).map {
+            val newDate = calendar.clone() as Calendar
+            newDate.add(Calendar.DAY_OF_YEAR, it)
+            newDate.time
+        }
     }
 
     LazyRow(
@@ -180,38 +214,206 @@ fun CalendarView(modifier: Modifier = Modifier) {
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(dates) { date ->
-            val cal = Calendar.getInstance()
-            cal.time = date
+            val anyPlantNeedsWater = plantsNeedingWaterOn(date, userPlants).isNotEmpty()
+
             DayItem(
                 date = date,
-                needsWatering = (cal.get(Calendar.DAY_OF_MONTH) % 3 == 0)
+                needsWatering = anyPlantNeedsWater,
+                isSelected = isSameDay(date, selectedDate),
+                onClick = { onDayClick(date) }
             )
         }
     }
 }
 
 @Composable
-fun DayItem(date: Date, needsWatering: Boolean) {
-    val dayFormat = SimpleDateFormat("EEE", Locale.getDefault())
-    val dateFormat = SimpleDateFormat("dd", Locale.getDefault())
+fun DayItem(date: Date, needsWatering: Boolean, isSelected: Boolean, onClick: () -> Unit) {
+    val dayFormat = remember {SimpleDateFormat("EEE", Locale.getDefault())}
+    val dateFormat = remember {SimpleDateFormat("dd", Locale.getDefault())}
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
-            .background(Color.White.copy(alpha = 0.8f), RoundedCornerShape(8.dp))
-            .padding(8.dp)
+            .width(45.dp)
+            .clickable {
+                onClick()
+            }
+            .background(
+                if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.9f)
+                else Color.White.copy(alpha = 0.8f),
+                RoundedCornerShape(8.dp)
+            )
     ) {
-        Text(dayFormat.format(date))
-        Text(dateFormat.format(date))
+        Text(dayFormat.format(date).replaceFirstChar { it.uppercase() }, color = if (isSelected) Color.White else Color.Black)
+        Text(dateFormat.format(date), color = if (isSelected) Color.White else Color.Black)
         if (needsWatering) {
             Icon(
                 Icons.Filled.WaterDrop,
                 contentDescription = null,
                 tint = Color.Blue,
-                modifier = Modifier.size(16.dp).padding(top = 4.dp)
+                modifier = Modifier
+                    .size(16.dp)
+                    .padding(top = 4.dp)
             )
         } else {
-            Spacer(Modifier.size(16.dp).padding(top = 4.dp))
+            Spacer(Modifier
+                .size(16.dp)
+                .padding(top = 4.dp))
         }
     }
+}
+
+@Composable
+fun DayPopup(
+    selectedDate: Date,
+    userPlants: List<UserPlant>,
+    onDismiss: () -> Unit
+) {
+    var showUpcoming by remember { mutableStateOf(false) }
+
+    val todayPlants = remember(selectedDate, userPlants) {
+        plantsNeedingWaterOn(selectedDate, userPlants)
+    }
+
+    val upcomingPlants = remember(selectedDate, userPlants) {
+        val result = mutableListOf<Pair<Date, UserPlant>>()
+        val calendar = Calendar.getInstance().apply {
+            time = selectedDate
+        }
+        for (i in 1..29) {
+            calendar.add(Calendar.DAY_OF_YEAR, 1)
+            val futureDate = calendar.time
+            val plants = plantsNeedingWaterOn(futureDate, userPlants)
+            plants.forEach { plant ->
+                result.add(futureDate to plant)
+            }
+        }
+        result
+    }
+
+    val dateFormat = remember {SimpleDateFormat("EEE dd MMM", Locale.getDefault())}
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surface,
+        title = {
+            Text(
+                text = dateFormat.format(selectedDate).split(" ").joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } },
+                style = MaterialTheme.typography.headlineSmall
+            )
+        },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = { showUpcoming = false },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (!showUpcoming) MaterialTheme.colorScheme.primary else PurpleGrey40),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Dagens", fontSize = 12.sp)
+                    }
+                    Button(
+                        onClick = { showUpcoming = true },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (showUpcoming) MaterialTheme.colorScheme.primary else PurpleGrey40),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Kommande", fontSize = 12.sp)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                if (!showUpcoming) {
+                    if (todayPlants.isEmpty()) {
+                        Text("Inga växter behöver vattnas denna dag.", color = MaterialTheme.colorScheme.onSurface)
+                    } else {
+                        todayPlants.forEach { plant ->
+                            Text(
+                                text = "💧 ${plant.customName.ifEmpty { plant.name }}",
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(vertical = 4.dp)
+                            )
+                        }
+                    }
+                } else {
+                    if (upcomingPlants.isEmpty()) {
+                        Text("Inga bevattningar de kommande 29 dagarna.", color = MaterialTheme.colorScheme.onSurface)
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.heightIn(max = 300.dp)
+                        ) {
+                            items(upcomingPlants) { (date, plant) ->
+                                Text(
+                                    text = "💧 ${dateFormat.format(date)} — ${plant.customName.ifEmpty { plant.name }}",
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.padding(vertical = 4.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Stäng", color = MaterialTheme.colorScheme.primary)
+            }
+        }
+    )
+}
+
+private fun plantsNeedingWaterOn(
+    date: Date,
+    userPlants: List<UserPlant>
+): List<UserPlant> {
+
+    val startOfDay = Calendar.getInstance().apply {
+        time = date
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }.timeInMillis
+
+    val todayMillis = Calendar.getInstance().apply {
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }.timeInMillis
+
+    return userPlants.filter { plant ->
+        if (plant.wateringIntervalMin <= 0) return@filter false
+
+        val lastWateredDay = Calendar.getInstance().apply {
+            time = plant.lastTimeWatered
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+
+        val daysSinceWatered = ((startOfDay - lastWateredDay) / DAY_MS).toInt()
+
+        if (daysSinceWatered <= 0) return@filter false
+
+        val isOverdue = ((todayMillis - lastWateredDay) / DAY_MS).toInt() >= plant.wateringIntervalMin
+        if (isOverdue && startOfDay == todayMillis) return@filter true
+
+        daysSinceWatered % plant.wateringIntervalMin == 0
+    }
+}
+
+private fun isSameDay(date1: Date, date2: Date?): Boolean {
+    if (date2 == null) return false
+    val cal1 = Calendar.getInstance().apply { time = date1 }
+    val cal2 = Calendar.getInstance().apply { time = date2 }
+    return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
+            cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
 }
