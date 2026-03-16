@@ -18,7 +18,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.getBy
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -40,6 +40,8 @@ import se.mau.grupp7.happyplant2.view.BonsaiScreen
 import se.mau.grupp7.happyplant2.view.DiscoverSearchScreen
 import android.os.Build
 import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
 import se.mau.grupp7.happyplant2.notification.NotificationHelper
 
 enum class SearchMode { PLANTS, DIAGNOSES }
@@ -55,7 +57,14 @@ class MainActivity : ComponentActivity() {
         NotificationHelper.scheduleWateringReminder(this)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1001)
+            val hasNotificationPermission = ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+
+            if (!hasNotificationPermission) {
+                requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1001)
+            }
         }
 
         setContent {
