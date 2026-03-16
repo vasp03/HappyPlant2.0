@@ -38,6 +38,11 @@ import se.mau.grupp7.happyplant2.view.theme.HappyPlant2Theme
 import se.mau.grupp7.happyplant2.viewmodel.PlantViewModel
 import se.mau.grupp7.happyplant2.view.BonsaiScreen
 import se.mau.grupp7.happyplant2.view.DiscoverSearchScreen
+import android.os.Build
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
+import se.mau.grupp7.happyplant2.notification.NotificationHelper
 
 enum class SearchMode { PLANTS, DIAGNOSES }
 
@@ -46,6 +51,22 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        NotificationHelper.createNotificationChannel(this)
+
+        NotificationHelper.scheduleWateringReminder(this)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val hasNotificationPermission = ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+
+            if (!hasNotificationPermission) {
+                requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1001)
+            }
+        }
+
         setContent {
             HappyPlant2Theme {
                 MainScreen(viewModel)

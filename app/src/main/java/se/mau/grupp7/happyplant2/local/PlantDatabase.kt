@@ -26,6 +26,9 @@ abstract class PlantDatabase : RoomDatabase() {
         @Query("SELECT * FROM plants")
         fun getAllPlants(): Flow<List<UserPlant>>
 
+        @Query("SELECT * FROM plants")
+        suspend fun getAllPlantsOnce(): List<UserPlant>
+
         @Insert(onConflict = OnConflictStrategy.REPLACE)
         suspend fun insertPlant(plant: UserPlant)
 
