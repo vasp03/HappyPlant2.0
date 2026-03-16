@@ -10,12 +10,20 @@ import se.mau.grupp7.happyplant2.model.*
 import se.mau.grupp7.happyplant2.network.PlantRepository
 import java.util.Date
 
-
 private const val MAX_HEALTH = 5
-class PlantViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val remoteRepository = PlantRepository()
-    private val localRepository = LocalPlantRepository(application)
+class PlantViewModel( //constructor used by tests
+    application: Application,
+    private val remoteRepository: PlantRepository = PlantRepository(),   // default = real one
+    private val localRepository: LocalPlantRepository = LocalPlantRepository(application)
+) : AndroidViewModel(application) {
+
+    constructor(application: Application) : this( //constructor used by app
+        application,
+        PlantRepository(),
+        LocalPlantRepository(application)
+    )
+
     private val _flowerList = MutableStateFlow<List<PlantDetails>>(emptyList())
     val flowerList: StateFlow<List<PlantDetails>> = _flowerList
     private val _diseaseList = MutableStateFlow<List<PestDisease>>(emptyList())
@@ -28,22 +36,17 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
         localRepository.plants
             .stateIn(
                 viewModelScope,
-                SharingStarted.WhileSubscribed(5000),
+                SharingStarted.Eagerly,
                 emptyList()
             )
 
+
     val categories: StateFlow<List<String>> =
         userPlants
-            .map { plants ->
-                plants
-                    .map { it.category.trim() }
-                    .filter { it.isNotBlank() }
-                    .distinct()
-                    .sorted()
-            }
+            .map { plants -> calculateCategories(plants) }
             .stateIn(
                 viewModelScope,
-                SharingStarted.WhileSubscribed(5000),
+                SharingStarted.Eagerly,
                 emptyList()
             )
     private val popularPlants = listOf("rosa", "rose", "lavender", "monstera")
@@ -86,7 +89,7 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
                 val diseases = remoteRepository.getPestDiseases()
                 _diseaseList.value = diseases
                 diseasesLoaded = true
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 _diseaseList.value = emptyList()
             } finally {
                 _isLoading.value = false
@@ -115,9 +118,7 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
     fun updatePlantDefect(plant: UserPlant, defect: Defect) {
         viewModelScope.launch {
 
-            val newHealth =
-                (MAX_HEALTH + defect.healthImpact)
-                    .coerceIn(0, MAX_HEALTH)
+            val newHealth = calculateNewHealth(defect.healthImpact)
 
             localRepository.update(
                 plant.copy(
@@ -136,21 +137,14 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+
     fun waterSelectedPlants(ids: List<String>) {
         if (ids.isEmpty()) return
 
         viewModelScope.launch {
             val now = Date()
-            val idSet = ids.toSet()
-
-            userPlants.value
-                .asSequence()
-                .filter { it.id in idSet }
-                .forEach { plant ->
-                    localRepository.update(
-                        plant.copy(lastTimeWatered = now)
-                    )
-                }
+            val updated = selectPlantsToWater(userPlants.value, ids, now)
+            updated.forEach { localRepository.update(it) }
         }
     }
 
@@ -169,64 +163,6 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
                 plant.copy(category = newCategory.trim())
             )
         }
-    }
-
-    private fun boundedLevenshtein(a: String, b: String, max: Int): Int {
-        val s = a.lowercase()
-        val t = b.lowercase()
-
-        val n = s.length
-        val m = t.length
-
-        if (kotlin.math.abs(n - m) > max) return max + 1
-        if (n == 0) return m
-        if (m == 0) return n
-
-        var prev = IntArray(m + 1) { it }
-        var curr = IntArray(m + 1)
-
-        for (i in 1..n) {
-            curr[0] = i
-            var rowMin = curr[0]
-            val sc = s[i - 1]
-
-            for (j in 1..m) {
-                val cost = if (sc == t[j - 1]) 0 else 1
-                val del = prev[j] + 1
-                val ins = curr[j - 1] + 1
-                val sub = prev[j - 1] + cost
-                val v = minOf(del, ins, sub)
-                curr[j] = v
-                if (v < rowMin) rowMin = v
-            }
-
-            if (rowMin > max) return max + 1
-
-            val tmp = prev
-            prev = curr
-            curr = tmp
-        }
-
-        return prev[m]
-    }
-
-    private fun suggestQuery(
-        query: String,
-        candidates: List<String>,
-        maxDistance: Int = 2
-    ): List<String> {
-
-        val q = query.trim().lowercase()
-        if (q.length < 3) return emptyList()
-
-        return candidates
-            .asSequence()
-            .map { it to boundedLevenshtein(q, it, maxDistance) }
-            .filter { (_, distance) -> distance <= maxDistance }
-            .sortedBy { it.second }
-            .take(5)
-            .map { it.first }
-            .toList()
     }
 
     fun updatePlantDetails(
@@ -260,19 +196,12 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
         userPlants
             .map { plants ->
 
-                if (plants.isEmpty()) return@map 100
+                calculateOverallHealthPercentage(plants)
 
-                val totalHealth =
-                    plants.sumOf { it.healthStatus }
-
-                val maxHealth = plants.size * 5
-
-                ((totalHealth.toFloat() / maxHealth) * 100)
-                    .toInt()
             }
             .stateIn(
                 viewModelScope,
-                SharingStarted.WhileSubscribed(5000),
+                SharingStarted.Eagerly,
                 100
             )
 
@@ -281,7 +210,7 @@ class PlantViewModel(application: Application) : AndroidViewModel(application) {
             .map { list -> list.find { it.id == id } }
             .stateIn(
                 viewModelScope,
-                SharingStarted.WhileSubscribed(5000),
+                SharingStarted.Eagerly,
                 null
             )
     }
