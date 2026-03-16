@@ -5,6 +5,8 @@ HappyPlant är en mobilapp som låter en användare skapa representationer av si
 
 
 ### Instruktioner för att köra programmet
-1. Utför en gradle sync.
-2. Lägg i API-nyckeln i local.properties.
-3. Kör programmet och vänta på att emulatorn startar.
+1. Ladda ner Android Studio.
+2. Klona projektet i Android Studio.
+3. Utför en gradle sync.
+4. Lägg i API-nyckeln i local.properties. (I formen: apiKey=YOUR_KEY)
+5. Kör programmet och vänta på att emulatorn startar.
