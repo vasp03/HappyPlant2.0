@@ -1,6 +1,5 @@
 package se.mau.grupp7.happyplant2.model
 
-import com.google.gson.annotations.SerializedName
 
 data class PlantResponse(
     val data: List<FlowerTypes>
@@ -33,27 +32,3 @@ data class DefaultImage(
     val thumbnail: String = ""
 )
 
-data class SpeciesDetails(
-    val watering: String = "Average",
-    @SerializedName("sunlight")
-    val sunlight: List<String> = emptyList(),
-    @SerializedName("watering_general_benchmark")
-    val wateringGeneralBenchmark: Benchmark? = null,
-    val growth: Growth? = null
-)
-
-data class Benchmark(
-    val value: String? = null,
-    val unit: String? = null
-)
-
-data class Growth(
-    @SerializedName("precipitation_minimum")
-    val precipitationMinimum: Measure? = null
-)
-
-data class Measure(
-    val mm: Int? = null,
-    val cm: Int? = null,
-    val inches: Int? = null
-)

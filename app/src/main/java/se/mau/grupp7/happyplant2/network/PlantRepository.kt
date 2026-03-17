@@ -45,72 +45,23 @@ class PlantRepository {
         plantDetails: PlantDetails,
         daysAgo: Int
     ): UserPlant {
-
-        val details = api.getSpeciesDetails(
-            id = plantDetails.id,
-            apiKey = BuildConfig.API_KEY
-        )
-
-        val (minInterval, maxInterval) =
-            parseWaterInterval(details.wateringGeneralBenchmark?.value, details.watering)
-
-        val waterAmount = mapWaterAmount(details.watering)
-
         return UserPlant(
             name = plantDetails.common_name,
             description = plantDetails.scientific_name,
             imageURL = plantDetails.imageUrl,
-            wateringIntervalMin = minInterval,
-            wateringIntervalMax = maxInterval,
-            wateringAmount = waterAmount,
+            wateringIntervalMin = 5,
+            wateringIntervalMax = 7,
+            wateringAmount = WaterAmount.RARELY,
             lastTimeWatered = Date(
                 System.currentTimeMillis() -
                         (daysAgo * MILLISECOND_CONVERSION)
             ),
             family = plantDetails.family,
-            sunlight = details.sunlight.joinToString(", "),
-            wateringNeeds = details.watering,
+            sunlight = "Unknown",
+            wateringNeeds = "average",
             healthStatus = 5,
             defectId = DefectList.NONE.id
         )
-    }
-
-    fun parseWaterInterval(
-        benchmark: String?,
-        watering: String
-    ): Pair<Int, Int> {
-
-        val value = benchmark ?: when (watering.lowercase()) {
-            "frequent" -> "2-3"
-            "average" -> "5-7"
-            "minimum" -> "10-14"
-            "none" -> "24-30"
-            else -> "5-7"
-        }
-
-        val parts = value
-            .split("-")
-            .mapNotNull { it.trim().toIntOrNull() }
-
-        return when {
-            parts.size >= 2 -> parts[0] to parts[1]
-            parts.size == 1 -> {
-                val v = parts[0]
-                val spread = (v * 0.3).toInt().coerceAtLeast(1)
-                (v - spread).coerceAtLeast(1) to (v + spread)
-            }
-            else -> 5 to 7
-        }
-    }
-
-    fun mapWaterAmount(watering: String): WaterAmount {
-        return when (watering.lowercase()) {
-            "frequent" -> WaterAmount.OFTEN
-            "average" -> WaterAmount.RARELY
-            "minimum" -> WaterAmount.CACTUS
-            "none" -> WaterAmount.NEVER
-            else -> WaterAmount.RARELY
-        }
     }
 
     fun rankPlants(

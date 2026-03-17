@@ -12,6 +12,7 @@ import se.mau.grupp7.happyplant2.network.PlantRepository
 import java.util.Date
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import android.util.Log
 
 private const val MAX_HEALTH = 5
 
@@ -128,7 +129,8 @@ class PlantViewModel(
                     localRepository.insert(newPlant)
                     onSuccess()
                 }
-            } catch (_: Exception) {
+            } catch ( e : Exception) {
+                Log.e("ADD_PLANT_ERROR", "Failed to add plant", e)
                 onError()
             }
         }
