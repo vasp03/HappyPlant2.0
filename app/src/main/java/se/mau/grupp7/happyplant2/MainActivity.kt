@@ -253,13 +253,25 @@ fun MainScreen(viewModel: PlantViewModel) {
                             viewModel.updatePlantDetails(
                                 p, customName, potType, height, notes
                             )
+
                             val now = System.currentTimeMillis()
-                            if (now - lastDetailsToastTime > 1500) {
+                            if (now - lastDetailsToastTime > 1500L) {
+
+                                val message =
+                                    when {
+                                        p.customName != customName -> "Name updated"
+                                        p.potType != potType -> "Pot updated"
+                                        p.heightCm != height -> "Height updated"
+                                        p.notes != notes -> "Notes updated"
+                                        else -> "Plant details saved"
+                                    }
+
                                 Toast.makeText(
                                     context,
-                                    "Plant details saved",
+                                    message,
                                     Toast.LENGTH_SHORT
                                 ).show()
+
                                 lastDetailsToastTime = now
                             }
                         },
