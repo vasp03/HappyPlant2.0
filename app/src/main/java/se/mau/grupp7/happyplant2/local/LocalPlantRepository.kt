@@ -4,9 +4,7 @@ import android.content.Context
 import kotlinx.coroutines.flow.Flow
 import se.mau.grupp7.happyplant2.model.UserPlant
 
-class LocalPlantRepository(context: Context) {
-
-    private val dao = PlantDatabase.getDatabase(context).plantDao()
+class LocalPlantRepository(private val dao: PlantDatabase.PlantDao) {
 
     val plants: Flow<List<UserPlant>> = dao.getAllPlants()
 

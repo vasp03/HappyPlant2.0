@@ -7,7 +7,7 @@ import se.mau.grupp7.happyplant2.model.UserPlant
 import se.mau.grupp7.happyplant2.model.WaterAmount
 import java.util.Date
 
-class UnitTest {
+class UserPlantTest {
 
     @Test
     fun plantDetails_initialization_isCorrect() {

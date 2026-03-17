@@ -1,10 +1,9 @@
-package se.mau.grupp7.happyplant2
+package se.mau.grupp7.happyplant2.viewmodel
 
-import org.junit.Assert.*
+import org.junit.Assert
 import org.junit.Test
 import se.mau.grupp7.happyplant2.model.UserPlant
 import se.mau.grupp7.happyplant2.model.WaterAmount
-import se.mau.grupp7.happyplant2.viewmodel.*
 import java.util.Date
 
 class PlantLogicTest {
@@ -23,19 +22,19 @@ class PlantLogicTest {
 
     @Test
     fun overallHealth_empty_returns100() {
-        assertEquals(100, calculateOverallHealthPercentage(emptyList()))
+        Assert.assertEquals(100, calculateOverallHealthPercentage(emptyList()))
     }
 
     @Test
     fun overallHealth_twoPlants_halfHealth_returns50() {
         val plants = listOf(plant(5), plant(0))
-        assertEquals(50, calculateOverallHealthPercentage(plants))
+        Assert.assertEquals(50, calculateOverallHealthPercentage(plants))
     }
 
     @Test
     fun overallHealth_roundsDown() {
         val plants = listOf(plant(1), plant(0), plant(0))
-        assertEquals(6, calculateOverallHealthPercentage(plants))
+        Assert.assertEquals(6, calculateOverallHealthPercentage(plants))
     }
 
     @Test
@@ -49,7 +48,7 @@ class PlantLogicTest {
 
         val result = calculateCategories(plants)
 
-        assertEquals(listOf("Flowers","Herbs","Trees"), result)
+        Assert.assertEquals(listOf("Flowers", "Herbs", "Trees"), result)
     }
 
     @Test
@@ -62,14 +61,14 @@ class PlantLogicTest {
 
         val result = calculateCategories(plants)
 
-        assertEquals(listOf("Herbs"), result)
+        Assert.assertEquals(listOf("Herbs"), result)
     }
 
     @Test
     fun newHealth_clampsToRange() {
-        assertEquals(0, calculateNewHealth(-10))
-        assertEquals(4, calculateNewHealth(-1))
-        assertEquals(5, calculateNewHealth(0))
-        assertEquals(5, calculateNewHealth(10))
+        Assert.assertEquals(0, calculateNewHealth(-10))
+        Assert.assertEquals(4, calculateNewHealth(-1))
+        Assert.assertEquals(5, calculateNewHealth(0))
+        Assert.assertEquals(5, calculateNewHealth(10))
     }
 }
