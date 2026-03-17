@@ -20,7 +20,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -140,21 +139,6 @@ fun BonsaiScreen(viewModel: PlantViewModel) {
             }
         }
 
-        IconButton(
-            onClick = { /* TODO: Navigate to settings */ },
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(12.dp)
-                .size(48.dp)
-                .background(Color(Color.Black.copy(alpha = 0.30f).value), shape = CircleShape)
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Settings,
-                contentDescription = "Settings",
-                tint = Color.White,
-                modifier = Modifier.size(36.dp),
-            )
-        }
         IconButton(
             onClick = { isCalendarVisible = !isCalendarVisible },
             modifier = Modifier
