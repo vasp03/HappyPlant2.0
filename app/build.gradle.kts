@@ -58,13 +58,13 @@ android {
         }
     }
 
-    ksp {
-        arg("room.schemaLocation", "$projectDir/schemas")
-        arg("room.incremental", "true")
-        arg("room.generateKotlin", "true")
-    }
-}
 
+}
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+    arg("room.incremental", "true")
+    arg("room.generateKotlin", "true")
+}
 dependencies {
     // Core
     implementation(libs.androidx.core.ktx)
@@ -100,6 +100,9 @@ dependencies {
     implementation("androidx.room:room-ktx:2.8.4")
     ksp("androidx.room:room-compiler:2.8.4")
 
+    // WorkManager (NOTIFICATIONS)
+    implementation("androidx.work:work-runtime-ktx:2.10.1")
+
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
@@ -110,4 +113,6 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+
+    androidTestImplementation("androidx.room:room-testing:2.8.4")
 }
