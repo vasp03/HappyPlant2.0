@@ -10,6 +10,8 @@ import se.mau.grupp7.happyplant2.local.PlantDatabase
 import se.mau.grupp7.happyplant2.model.*
 import se.mau.grupp7.happyplant2.network.PlantRepository
 import java.util.Date
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 
 private const val MAX_HEALTH = 5
 
@@ -35,6 +37,20 @@ class PlantViewModel(
     private var diseasesLoaded = false
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
+
+    private suspend fun <T> withSpinnerAfter100ms(block: suspend () -> T): T {
+        var job: Job? = null
+        try {
+            job = viewModelScope.launch {
+                delay(100)
+                _isLoading.value = true
+            }
+            return block()
+        } finally {
+            job?.cancel()
+            _isLoading.value = false
+        }
+    }
 
     val userPlants: StateFlow<List<UserPlant>> =
         localRepository.plants
@@ -66,21 +82,19 @@ class PlantViewModel(
         }
 
         viewModelScope.launch {
-            _isLoading.value = true
             try {
-                val plants = remoteRepository.getRankedPlants(q)
-                _flowerList.value = plants
+                withSpinnerAfter100ms {
+                    val plants = remoteRepository.getRankedPlants(q)
+                    _flowerList.value = plants
 
-                _suggestions.value =
-                    if (plants.isEmpty()) {
-                        suggestQuery(q, popularPlants, 2)
-                    } else emptyList()
-
+                    _suggestions.value =
+                        if (plants.isEmpty()) {
+                            suggestQuery(q, popularPlants, 2)
+                        } else emptyList()
+                }
             } catch (_: Exception) {
                 _flowerList.value = emptyList()
                 _suggestions.value = emptyList()
-            } finally {
-                _isLoading.value = false
             }
         }
     }
@@ -88,15 +102,15 @@ class PlantViewModel(
     fun getDiseases() {
         if (diseasesLoaded) return
         viewModelScope.launch {
-            _isLoading.value = true
             try {
-                val diseases = remoteRepository.getPestDiseases()
-                _diseaseList.value = diseases
-                diseasesLoaded = true
+                withSpinnerAfter100ms {
+                    val diseases = remoteRepository.getPestDiseases()
+                    _diseaseList.value = diseases
+                    diseasesLoaded = true
+                }
+
             } catch (_: Exception) {
                 _diseaseList.value = emptyList()
-            } finally {
-                _isLoading.value = false
             }
         }
     }
@@ -104,15 +118,16 @@ class PlantViewModel(
     fun addPlantToUserCollection(
         plantDetails: PlantDetails,
         daysAgo: Int,
+        onSuccess: () -> Unit,
         onError: () -> Unit
     ) {
         viewModelScope.launch {
             try {
-                val newPlant =
-                    remoteRepository.createUserPlant(plantDetails, daysAgo)
-
-                localRepository.insert(newPlant)
-
+                withSpinnerAfter100ms {
+                    val newPlant = remoteRepository.createUserPlant(plantDetails, daysAgo)
+                    localRepository.insert(newPlant)
+                    onSuccess()
+                }
             } catch (_: Exception) {
                 onError()
             }
