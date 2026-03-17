@@ -75,7 +75,7 @@ class PlantRepository {
         )
     }
 
-    private fun parseWaterInterval(
+    fun parseWaterInterval(
         benchmark: String?,
         watering: String
     ): Pair<Int, Int> {
@@ -103,7 +103,7 @@ class PlantRepository {
         }
     }
 
-    private fun mapWaterAmount(watering: String): WaterAmount {
+    fun mapWaterAmount(watering: String): WaterAmount {
         return when (watering.lowercase()) {
             "frequent" -> WaterAmount.OFTEN
             "average" -> WaterAmount.RARELY
@@ -113,7 +113,7 @@ class PlantRepository {
         }
     }
 
-    private fun rankPlants(
+    fun rankPlants(
         plants: List<PlantDetails>,
         query: String
     ): List<PlantDetails> {

@@ -6,22 +6,26 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import se.mau.grupp7.happyplant2.local.LocalPlantRepository
+import se.mau.grupp7.happyplant2.local.PlantDatabase
 import se.mau.grupp7.happyplant2.model.*
 import se.mau.grupp7.happyplant2.network.PlantRepository
 import java.util.Date
 
 private const val MAX_HEALTH = 5
 
-class PlantViewModel( //constructor used by tests
+class PlantViewModel(
     application: Application,
-    private val remoteRepository: PlantRepository = PlantRepository(),   // default = real one
-    private val localRepository: LocalPlantRepository = LocalPlantRepository(application)
+    private val remoteRepository: PlantRepository,
+    private val localRepository: LocalPlantRepository
 ) : AndroidViewModel(application) {
 
-    constructor(application: Application) : this( //constructor used by app
+    // App constructor (default)
+    constructor(application: Application) : this(
         application,
         PlantRepository(),
-        LocalPlantRepository(application)
+        LocalPlantRepository(
+            PlantDatabase.getDatabase(application).plantDao()
+        )
     )
 
     private val _flowerList = MutableStateFlow<List<PlantDetails>>(emptyList())

@@ -1,4 +1,4 @@
-package se.mau.grupp7.happyplant2
+package se.mau.grupp7.happyplant2.viewmodel
 
 import android.app.Application
 import app.cash.turbine.test
@@ -11,10 +11,10 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.*
+import se.mau.grupp7.happyplant2.MainDispatcherRule
 import se.mau.grupp7.happyplant2.local.LocalPlantRepository
 import se.mau.grupp7.happyplant2.model.*
 import se.mau.grupp7.happyplant2.network.PlantRepository
-import se.mau.grupp7.happyplant2.viewmodel.PlantViewModel
 import java.util.Date
 
 @OptIn(ExperimentalCoroutinesApi::class)

@@ -1,10 +1,9 @@
-package se.mau.grupp7.happyplant2
+package se.mau.grupp7.happyplant2.viewmodel
 
-import org.junit.Assert.*
+import org.junit.Assert
 import org.junit.Test
 import se.mau.grupp7.happyplant2.model.UserPlant
 import se.mau.grupp7.happyplant2.model.WaterAmount
-import se.mau.grupp7.happyplant2.viewmodel.selectPlantsToWater
 import java.util.Date
 
 class PlantWateringLogicTest {
@@ -25,7 +24,7 @@ class PlantWateringLogicTest {
     fun selectPlantsToWater_emptyIds_returnsEmpty() {
         val now = Date(123)
         val result = selectPlantsToWater(listOf(plant("a", Date(1))), emptyList(), now)
-        assertTrue(result.isEmpty())
+        Assert.assertTrue(result.isEmpty())
     }
 
     @Test
@@ -36,8 +35,8 @@ class PlantWateringLogicTest {
 
         val result = selectPlantsToWater(plants, listOf("a", "c"), now)
 
-        assertEquals(2, result.size)
-        assertEquals(setOf("a", "c"), result.map {it.id}.toSet())
+        Assert.assertEquals(2, result.size)
+        Assert.assertEquals(setOf("a", "c"), result.map { it.id }.toSet())
     }
 
     @Test
@@ -48,9 +47,9 @@ class PlantWateringLogicTest {
 
         val result = selectPlantsToWater(plants, listOf("b"), now)
 
-        assertEquals(1, result.size)
-        assertEquals("b", result[0].id)
-        assertEquals(now, result[0].lastTimeWatered)
+        Assert.assertEquals(1, result.size)
+        Assert.assertEquals("b", result[0].id)
+        Assert.assertEquals(now, result[0].lastTimeWatered)
     }
 
     @Test
@@ -61,7 +60,7 @@ class PlantWateringLogicTest {
 
         val result = selectPlantsToWater(plants, listOf("a"), now)
 
-        assertEquals(listOf("a"), result.map {it.id})
+        Assert.assertEquals(listOf("a"), result.map { it.id })
     }
 
     @Test
@@ -72,7 +71,7 @@ class PlantWateringLogicTest {
 
         val result = selectPlantsToWater(plants, listOf("a", "a", "a"), now)
 
-        assertEquals(1, result.size)
-        assertEquals("a", result.first().id)
+        Assert.assertEquals(1, result.size)
+        Assert.assertEquals("a", result.first().id)
     }
 }
