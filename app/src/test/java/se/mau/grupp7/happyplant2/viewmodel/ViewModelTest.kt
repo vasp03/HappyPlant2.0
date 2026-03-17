@@ -149,7 +149,12 @@ class PlantViewModelTest {
     @Test
     fun `addPlantToUserCollection inserts plant`() = runTest {
         var errorCalled = false
-        vm.addPlantToUserCollection(plantDetails(), 0) { errorCalled = true }
+        vm.addPlantToUserCollection(
+            plantDetails(),
+            0,
+            {},
+            { errorCalled = true }
+        )
         advanceUntilIdle()
         assertTrue(!errorCalled)
         coVerify { mockLocal.insert(any()) }
