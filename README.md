@@ -3,6 +3,8 @@
 ### Produktbeskrivning
 HappyPlant är en mobilapp som låter en användare skapa representationer av sina växter som håller koll på information kring dem, speciellt när och hur de ska vattnas. Den är skapad i Android Studio och använder sig huvudsakligen av Compose. Växtinformation hämtas ifrån API:et Perenual.
 
+https://github.com/vasp03/HappyPlant2.0
+
 ### Icon
 Icon made by Freepik from https://www.flaticon.com (CC BY 3.0)
 
